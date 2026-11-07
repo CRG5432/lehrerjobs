@@ -28,3 +28,5 @@ Dann http://localhost:8000 öffnen.
 ## Manuell aktualisieren
 
 Auf GitHub: *Actions → Stellen aktualisieren → Run workflow*.
+
+| sonderpaedagogisches.stellenboersevsa.ch | Sonderschulen Kanton Zürich (Unterricht) |

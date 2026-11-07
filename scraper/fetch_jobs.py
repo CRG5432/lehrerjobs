@@ -43,6 +43,8 @@ JOBROOM_KEYWORDS = [
     "Lehrperson", "Lehrer", "Lehrerin", "Lehrkraft", "Mittelschullehrperson",
     "Fachlehrperson", "Berufsfachschule", "Lehrauftrag", "Lehrbeauftragte",
     "Bildnerisches Gestalten", "Englisch", "Stellvertretung Lehrperson",
+    "Oberstufe", "Sekundarschule", "Sekundarlehrperson", "Bezirksschule", "Realschule",
+    "Heilpädagogik", "Heilpädagoge", "Heilpädagogin", "SHP", "Sonderschule", "Deutsch Lehrperson",
     "Kantonsschule", "Gymnasium",
 ]
 
@@ -517,8 +519,8 @@ def source_agk(cache: dict, geo: Geo) -> list[dict]:
 VSA = "https://www.stellenboersevsa.ch"
 
 
-def vsa_list(kind: str) -> list[dict]:
-    s = get_text(f"{VSA}/public_suche.php?stellen_typ={kind}&suche=")
+def vsa_list(kind: str, base: str = VSA) -> list[dict]:
+    s = get_text(f"{base}/public_suche.php?stellen_typ={kind}&suche=")
     out = []
     for row in re.findall(r"<tr>\s*<td class=\"export_item\".*?</tr>", s, re.S):
         m = re.search(r"stelle_id=(\d+)", row)
@@ -529,15 +531,17 @@ def vsa_list(kind: str) -> list[dict]:
     return out
 
 
-def vsa_detail(sid: str) -> dict:
-    s = get_text(f"{VSA}/public_suche.php?stelle_id={sid}")
+def vsa_detail(sid: str, base: str = VSA) -> dict:
+    s = get_text(f"{base}/public_suche.php?stelle_id={sid}")
     f: dict[str, str] = {}
     for dt, dd in re.findall(r'<dt class="label">(.*?)</dt>\s*<dd[^>]*>(.*?)</dd>', s, re.S):
         f[clean(strip_tags(dt))] = clean(strip_tags(dd))
     head = re.search(r"(Dauerstelle|Stellvertretung)\s+(\d+)", strip_tags(s))
     links = re.findall(r'href="(https?://[^"]+)"', s)
     apply = next((l for l in links if "publicjobs" in l or "bewerb" in l.lower()), None)
-    return {"f": f, "nr": head.group(2) if head else "", "apply": apply}
+    pdf = re.search(r'href="(/library/[^"]+\.pdf)"', s)
+    return {"f": f, "nr": head.group(2) if head else "", "apply": apply,
+            "pdf": (base + pdf.group(1)) if pdf else None}
 
 
 def source_vsa(cache: dict, geo: Geo) -> list[dict]:
@@ -588,6 +592,61 @@ def source_vsa(cache: dict, geo: Geo) -> list[dict]:
             role="Schulleitung" if "schulleitung" in typ.lower() else "Lehrperson",
             published=parse_date_ch(f.get("Erfassungsdatum")), text=f"{typ} · {klasse} · Fächer: {faecher or '—'} · {dauer}",
             apply=d.get("apply"),
+        ))
+    return jobs
+
+
+# --------------------------------------------------------------------------- #
+# Quelle 3b: Stellenboerse Sonderschulen Kanton Zuerich (VSA)
+# --------------------------------------------------------------------------- #
+
+VSA_SP = "https://sonderpaedagogisches.stellenboersevsa.ch"
+
+
+def source_vsa_sonder(cache: dict, geo: Geo) -> list[dict]:
+    rows = vsa_list("Dauerstelle", VSA_SP) + vsa_list("Stellvertretung", VSA_SP)
+    # Spalten: Einrichtung, Standort, Bereich, Schulstufe, Pensum, Antritt
+    rows = [r for r in rows if (r["cells"] + ["", "", ""])[2].lower().startswith("unterricht")]
+    todo = [r for r in rows if f"vsasp-{r['sid']}" not in cache]
+    def det(r):
+        time.sleep(0.2)
+        return safe(vsa_detail, r["sid"], VSA_SP)
+    with ThreadPoolExecutor(3) as ex:
+        for r, d in zip(todo, ex.map(det, todo)):
+            if d:
+                cache[f"vsasp-{r['sid']}"] = d
+    jobs = []
+    for r in rows:
+        d = cache.get(f"vsasp-{r['sid']}", {})
+        f = d.get("f", {})
+        c = r["cells"] + [""] * 8
+        einr = f.get("Einrichtung") or c[0]
+        standort = f.get("Standort") or c[1]
+        bereich = (f.get("Stellenbereich und Einsatzbereich") or c[2]).replace("Unterricht ", "").strip()
+        stufe = f.get("Schulstufe") or c[3]
+        pmin, pmax = parse_pensum(f.get("Pensum") or c[4])
+        sub = r["kind"] == "Stellvertretung"
+        levels = ["Heilpädagogik / Sonderschule"]
+        st = stufe.lower()
+        if "sek" in st or "mehrere stufen" in st or "oberstufe" in st or "verlängerte" in st:
+            levels.insert(0, "Sekundarstufe I")
+        elif "kindergarten" in st:
+            levels.insert(0, "Kindergarten")
+        elif st:
+            levels.insert(0, "Primarschule")
+        title = f"{'Stellvertretung ' if sub else ''}Lehrperson Sonderschule – {bereich}" + (f" ({stufe})" if stufe else "")
+        plz, place = find_plz(standort)
+        g = geo.lookup(plz, place or standort, "ZH") or geo.lookup(None, einr, "ZH")
+        jobs.append(make_job(
+            id=f"vsasp-{r['sid']}", source="Sonderschulen Zürich (VSA)",
+            url=f"{VSA_SP}/public_suche.php?stelle_id={r['sid']}", title=title,
+            employer=einr, place=place or (standort if standort and not re.search(r"\d", standort) else einr), plz=plz,
+            canton="ZH", geo=g, pmin=pmin, pmax=pmax, wl=None,
+            start=f.get("Antrittsdatum") or c[5], end=None,
+            temporary=True if sub else None, substitute=sub,
+            levels=levels, subjects=[], role="Lehrperson",
+            published=parse_date_ch(f.get("Erfassungsdatum")),
+            text=f"{einr} · {bereich} · Stufe: {stufe or '—'}", apply=d.get("pdf") or d.get("apply"),
         ))
     return jobs
 
@@ -733,6 +792,7 @@ def main() -> int:
         ("Volksschule Aargau", "agvs", source_agvs, "https://www.schulen-aargau.ch/stellen"),
         ("Kanton Aargau", "agk", source_agk, "https://www.ag.ch/stellen"),
         ("Volksschule Zürich (VSA)", "vsa", source_vsa, "https://www.stellenboersevsa.ch/public_index.php"),
+        ("Sonderschulen Zürich (VSA)", "vsasp", source_vsa_sonder, "https://sonderpaedagogisches.stellenboersevsa.ch/public_index.php"),
         ("job-room.ch", "jr", source_jobroom, "https://www.job-room.ch"),
     ]
     all_jobs: list[dict] = []
