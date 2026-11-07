@@ -9,39 +9,66 @@
 <title>Lehrerstellen</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%232f6b5e'/><path d='M14 24 32 15l18 9-18 9z' fill='%23fff'/><path d='M22 29v10c0 3 5 6 10 6s10-3 10-6V29' fill='none' stroke='%23fff' stroke-width='4'/></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%232f6b5e'/><path d='M14 24 32 15l18 9-18 9z' fill='%23fff'/><path d='M22 29v10c0 3 5 6 10 6s10-3 10-6V29' fill='none' stroke='%23fff' stroke-width='4'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f6f4ef; --surface:#ffffff; --surface-2:#efece5; --text:#1d1f23; --muted:#62666e;
-  --line:#dedad1; --accent:#2f6b5e; --accent-ink:#ffffff; --accent-soft:#dcebe6;
-  --new:#b4451f; --new-soft:#f8e3d9; --star:#c98a06; --warn:#8a5a00; --warn-soft:#fbefd2;
-  --shadow:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);
+  --bg:#f7f5f0; --surface:#ffffff; --surface-2:#f1eee7; --text:#1d1f23; --muted:#646871;
+  --line:#e4e0d6; --accent:#2f6b5e; --accent-ink:#ffffff; --accent-soft:#dfeee9;
+  --new:#c2410c; --new-soft:#fde8dc; --star:#d49a0a; --warn:#8a5a00; --warn-soft:#fbf0d4;
+  --hero-1:#2f6b5e; --hero-2:#3f8571; --hero-ink:#ffffff; --hero-soft:rgba(255,255,255,.14);
+  --lv-gym:#4f5bd5; --lv-bfs:#d97706; --lv-sek:#0e8a7e; --lv-pri:#3f9142; --lv-kg:#d6487e;
+  --lv-hp:#8b5cf6; --lv-other:#9aa0a8;
+  --shadow:0 1px 2px rgba(30,30,20,.04),0 4px 14px rgba(30,30,20,.05);
+  --shadow-hover:0 2px 4px rgba(30,30,20,.05),0 10px 24px rgba(30,30,20,.08);
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#16181c; --surface:#1f2228; --surface-2:#282c33; --text:#eceae6; --muted:#a3a7ae;
-    --line:#343941; --accent:#6fbfa9; --accent-ink:#0f1a17; --accent-soft:#233a34;
-    --new:#f0906b; --new-soft:#3b261d; --star:#f2bc3d; --warn:#f2c46b; --warn-soft:#3a2f17;
-    --shadow:none; color-scheme:dark;
+    --bg:#14161a; --surface:#1d2026; --surface-2:#272b32; --text:#eceae6; --muted:#a3a7ae;
+    --line:#323740; --accent:#73c4ad; --accent-ink:#0f1a17; --accent-soft:#213832;
+    --new:#f59a6f; --new-soft:#3b251b; --star:#f2bc3d; --warn:#f2c46b; --warn-soft:#3a2f17;
+    --hero-1:#1f3d36; --hero-2:#25493f; --hero-ink:#eef6f3; --hero-soft:rgba(255,255,255,.08);
+    --lv-gym:#8f98ff; --lv-bfs:#f5a524; --lv-sek:#3cc2b3; --lv-pri:#6cc36f; --lv-kg:#f07aa5;
+    --lv-hp:#b39bff; --lv-other:#6b717a;
+    --shadow:none; --shadow-hover:0 0 0 1px var(--line); color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#16181c; --surface:#1f2228; --surface-2:#282c33; --text:#eceae6; --muted:#a3a7ae;
-  --line:#343941; --accent:#6fbfa9; --accent-ink:#0f1a17; --accent-soft:#233a34;
-  --new:#f0906b; --new-soft:#3b261d; --star:#f2bc3d; --warn:#f2c46b; --warn-soft:#3a2f17;
-  --shadow:none; color-scheme:dark;
+  --bg:#14161a; --surface:#1d2026; --surface-2:#272b32; --text:#eceae6; --muted:#a3a7ae;
+  --line:#323740; --accent:#73c4ad; --accent-ink:#0f1a17; --accent-soft:#213832;
+  --new:#f59a6f; --new-soft:#3b251b; --star:#f2bc3d; --warn:#f2c46b; --warn-soft:#3a2f17;
+  --hero-1:#1f3d36; --hero-2:#25493f; --hero-ink:#eef6f3; --hero-soft:rgba(255,255,255,.08);
+  --lv-gym:#8f98ff; --lv-bfs:#f5a524; --lv-sek:#3cc2b3; --lv-pri:#6cc36f; --lv-kg:#f07aa5;
+  --lv-hp:#b39bff; --lv-other:#6b717a;
+  --shadow:none; --shadow-hover:0 0 0 1px var(--line); color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--text);
-  font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 a{color:var(--accent)}
 button,input,select{font:inherit;color:inherit}
 .wrap{max-width:860px;margin:0 auto;padding:0 16px}
-header{padding:20px 0 8px}
-h1{font-size:24px;line-height:1.2;margin:0 0 4px;letter-spacing:-.01em}
-.sub{color:var(--muted);font-size:13px}
-.sub b{color:var(--text);font-weight:600}
+
+/* Kopfbereich */
+.hero{background:linear-gradient(135deg,var(--hero-1),var(--hero-2));color:var(--hero-ink);
+  border-radius:0 0 28px 28px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-60px;top:-70px;width:240px;height:240px;border-radius:50%;
+  background:var(--hero-soft);pointer-events:none}
+.hero::before{content:"";position:absolute;right:70px;top:90px;width:90px;height:90px;border-radius:50%;
+  background:var(--hero-soft);pointer-events:none}
+header{padding:26px 0 22px;position:relative;z-index:1}
+.eyebrow{font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;font-weight:600}
+h1{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:30px;line-height:1.1;margin:6px 0 6px;letter-spacing:-.01em}
+.sub{font-size:13px;opacity:.85}
+.sub b{font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.stat{background:var(--hero-soft);border-radius:14px;padding:10px 12px;cursor:pointer;border:0;color:inherit;text-align:left}
+.stat:hover{background:rgba(255,255,255,.2)}
+.stat b{display:block;font-family:Fraunces,Georgia,serif;font-size:24px;line-height:1.1}
+.stat span{font-size:12px;opacity:.85;line-height:1.25;display:block;margin-top:2px}
 
 /* Suche + Filter */
 .bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 10px;border-bottom:1px solid transparent}
@@ -55,7 +82,8 @@ h1{font-size:24px;line-height:1.2;margin:0 0 4px;letter-spacing:-.01em}
 .quick{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
 .quick::-webkit-scrollbar{display:none}
 
-.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;cursor:pointer;font-size:14px;line-height:1.2;user-select:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;cursor:pointer;font-size:14px;line-height:1.2;user-select:none;transition:background .15s,border-color .15s}
+.chip:hover{border-color:var(--accent)}
 .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .chip small{opacity:.7;margin-left:3px}
 
@@ -78,9 +106,15 @@ input.field{width:90px}
 .resbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 0 6px;color:var(--muted);font-size:14px}
 .resbar select{height:34px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:0 8px}
 .list{display:flex;flex-direction:column;gap:10px;padding-bottom:40px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 14px 12px;box-shadow:var(--shadow)}
+.card{--lv:var(--lv-other);background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  padding:14px 14px 12px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:box-shadow .2s,transform .2s}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--lv)}
+.card:hover{box-shadow:var(--shadow-hover);transform:translateY(-1px)}
+.card.fav{border-color:color-mix(in srgb,var(--star) 45%,var(--line))}
 .card-top{display:flex;gap:10px;align-items:flex-start}
-.card h2{font-size:16px;line-height:1.3;margin:0;flex:1;min-width:0;overflow-wrap:anywhere}
+.card h2{font-size:16.5px;font-weight:650;line-height:1.3;margin:0;flex:1;min-width:0;overflow-wrap:anywhere}
+.lvtag{display:inline-flex;align-items:center;gap:5px}
+.lvtag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c,var(--lv-other))}
 .card h2 a{color:var(--text);text-decoration:none}
 .card h2 a:hover{text-decoration:underline}
 .star{flex:none;background:none;border:0;cursor:pointer;font-size:22px;line-height:1;color:var(--line);padding:0 2px;margin:-2px -4px 0 0}
@@ -101,19 +135,25 @@ input.field{width:90px}
 .card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--muted)}
 .card-foot a{font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap}
 .empty{text-align:center;color:var(--muted);padding:40px 10px}
+.empty .big{font-size:40px;display:block;margin-bottom:8px}
 .notice{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:10px}
 footer{color:var(--muted);font-size:12.5px;padding:10px 0 40px;border-top:1px solid var(--line)}
 footer ul{padding-left:18px;margin:6px 0}
 .ok{color:var(--accent)} .bad{color:var(--new)}
-@media (min-width:640px){ h1{font-size:28px} .card{padding:16px 18px 14px} }
+@media (min-width:640px){ h1{font-size:38px} header{padding:36px 0 28px} .card{padding:16px 18px 14px 22px} .stat b{font-size:28px} }
+@media (prefers-reduced-motion: reduce){ .card,.chip{transition:none} .card:hover{transform:none} }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Offene Lehrerstellen</h1>
-    <div class="sub" id="updated">Lade Stellen …</div>
-  </header>
+<div class="hero">
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Aargau · Zürich · Umgebung</div>
+      <h1>Offene Lehrerstellen</h1>
+      <div class="sub" id="updated">Lade Stellen …</div>
+      <div class="stats" id="stats"></div>
+    </header>
+  </div>
 </div>
 
 <div class="bar" id="bar">
@@ -205,14 +245,19 @@ footer ul{padding-left:18px;margin:6px 0}
     { id: "dauer", label: "Feste Stelle" },
     { id: "stv", label: "Stellvertretung / befristet" },
   ];
+  const LEVEL_COLOR = {
+    "Gymnasium / Mittelschule": "--lv-gym", "Berufsfachschule": "--lv-bfs", "Sekundarstufe I": "--lv-sek",
+    "Primarschule": "--lv-pri", "Kindergarten": "--lv-kg", "Heilpädagogik / Sonderschule": "--lv-hp",
+  };
+  const lvVar = (l) => `var(${LEVEL_COLOR[l] || "--lv-other"})`;
   const QUICK = [
-    { label: "Bildnerisches Gestalten", apply: (f) => toggleIn(f.subjects, "Bildnerisches Gestalten") , on: (f) => f.subjects.includes("Bildnerisches Gestalten") },
-    { label: "Englisch", apply: (f) => toggleIn(f.subjects, "Englisch"), on: (f) => f.subjects.includes("Englisch") },
-    { label: "Gymi", apply: (f) => toggleIn(f.levels, "Gymnasium / Mittelschule"), on: (f) => f.levels.includes("Gymnasium / Mittelschule") },
-    { label: "Berufsschule", apply: (f) => toggleIn(f.levels, "Berufsfachschule"), on: (f) => f.levels.includes("Berufsfachschule") },
+    { label: "🎨 Bildnerisches Gestalten", apply: (f) => toggleIn(f.subjects, "Bildnerisches Gestalten") , on: (f) => f.subjects.includes("Bildnerisches Gestalten") },
+    { label: "💬 Englisch", apply: (f) => toggleIn(f.subjects, "Englisch"), on: (f) => f.subjects.includes("Englisch") },
+    { label: "🎓 Gymi", apply: (f) => toggleIn(f.levels, "Gymnasium / Mittelschule"), on: (f) => f.levels.includes("Gymnasium / Mittelschule") },
+    { label: "🛠️ Berufsschule", apply: (f) => toggleIn(f.levels, "Berufsfachschule"), on: (f) => f.levels.includes("Berufsfachschule") },
     { label: "Sek I", apply: (f) => toggleIn(f.levels, "Sekundarstufe I"), on: (f) => f.levels.includes("Sekundarstufe I") },
     { label: "Stellvertretungen", apply: (f) => toggleIn(f.kinds, "stv"), on: (f) => f.kinds.includes("stv") },
-    { label: "Neu", apply: (f) => (f.onlyNew = !f.onlyNew), on: (f) => f.onlyNew },
+    { label: "✨ Neu", apply: (f) => (f.onlyNew = !f.onlyNew), on: (f) => f.onlyNew },
     { label: "★ Gemerkt", apply: (f) => (f.onlyFav = !f.onlyFav), on: (f) => f.onlyFav },
   ];
 
@@ -350,7 +395,7 @@ footer ul{padding-left:18px;margin:6px 0}
     j.subjects.forEach((s) => tags.push(`<span class="tag subj">${esc(s)}</span>`));
     if (F.weak || F.subjects.some((s) => (j.subjects_text || []).includes(s)))
       (j.subjects_text || []).filter((s) => F.subjects.includes(s)).forEach((s) => tags.push(`<span class="tag subj weak" title="nur im Text erwähnt">${esc(s)}?</span>`));
-    j.levels.forEach((l) => tags.push(`<span class="tag">${esc(l)}</span>`));
+    j.levels.forEach((l) => tags.push(`<span class="tag lvtag" style="--c:${lvVar(l)}">${esc(l)}</span>`));
     const pt = pensumText(j); if (pt) tags.push(`<span class="tag">${esc(pt)}</span>`);
     if (j.substitute) tags.push(`<span class="tag sub">Stellvertretung</span>`);
     else if (j.temporary === true) tags.push(`<span class="tag sub">befristet</span>`);
@@ -363,7 +408,7 @@ footer ul{padding-left:18px;margin:6px 0}
     const where = [j.employer, [j.place, j.canton && !String(j.place).includes(j.canton) ? j.canton : ""].filter(Boolean).join(" ")]
       .filter(Boolean).join(" · ") + (d != null ? ` · ${d < 1 ? "<1" : Math.round(d)} km` : "");
     const pub = j.published ? `inseriert ${fmtDate(j.published)}` : `gefunden ${fmtDate(j.first_seen)}`;
-    return `<article class="card">
+    return `<article class="card${favs.has(j.id) ? " fav" : ""}" style="--lv:${lvVar(j.levels[0])}">
       <div class="card-top">
         <h2><a href="${esc(j.url)}" target="_blank" rel="noopener">${esc(j.title)}</a></h2>
         <button class="star" data-fav="${esc(j.id)}" aria-pressed="${favs.has(j.id)}" aria-label="Merken">★</button>
@@ -381,7 +426,7 @@ footer ul{padding-left:18px;margin:6px 0}
     const res = sorted(DATA.jobs.filter((j) => matches(j)));
     $("#rescount").textContent = `${res.length} ${res.length === 1 ? "Stelle" : "Stellen"}`;
     if (!res.length) {
-      $("#list").innerHTML = `<div class="empty">Keine passenden Stellen gefunden.<br>Versuch es mit weniger Filtern.</div>`;
+      $("#list").innerHTML = `<div class="empty"><span class="big">🔍</span>Keine passenden Stellen gefunden.<br>Versuch es mit weniger Filtern – oder schau morgen wieder rein.</div>`;
       return;
     }
     $("#list").innerHTML = res.slice(0, renderLimit).map(card).join("") +
@@ -414,6 +459,7 @@ footer ul{padding-left:18px;margin:6px 0}
       favs.has(id) ? favs.delete(id) : favs.add(id);
       store.set("favs", [...favs]);
       star.setAttribute("aria-pressed", favs.has(id));
+      star.closest(".card")?.classList.toggle("fav", favs.has(id));
       if (F.onlyFav) render();
       return;
     }
@@ -452,6 +498,22 @@ footer ul{padding-left:18px;margin:6px 0}
     const newCount = DATA.jobs.filter((j) => daysAgo(j.first_seen) <= 1 && j.role === "Lehrperson").length;
     $("#updated").innerHTML = `Aktualisiert ${up.toLocaleDateString("de-CH", { weekday: "short", day: "numeric", month: "long" })}, ${up.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })} · <b>${DATA.jobs.length}</b> Stellen` +
       (newCount && newCount < DATA.jobs.length ? ` · <b>${newCount}</b> neu seit gestern` : "");
+    const teach = DATA.jobs.filter((j) => j.role === "Lehrperson");
+    const week = teach.filter((j) => daysAgo(j.first_seen) <= 7).length;
+    const fav = teach.filter((j) => j.subjects.some((s) => FAV_SUBJECTS.includes(s))).length;
+    $("#stats").innerHTML =
+      `<button class="stat" data-stat="all"><b>${teach.length}</b><span>Unterrichts­stellen</span></button>` +
+      `<button class="stat" data-stat="new"><b>${week}</b><span>neu diese Woche</span></button>` +
+      `<button class="stat" data-stat="fav"><b>${fav}</b><span>mit BG oder Englisch</span></button>`;
+    $("#stats").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-stat]"); if (!b) return;
+      const keep = { home: F.home, radius: F.radius, sort: F.sort };
+      F = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), keep);
+      if (b.dataset.stat === "new") F.onlyNew = true;
+      if (b.dataset.stat === "fav") F.subjects = FAV_SUBJECTS.slice();
+      renderLimit = 60; render();
+      $("#bar").scrollIntoView({ behavior: "smooth" });
+    });
     const failed = DATA.sources.filter((s) => !s.ok);
     if (failed.length) {
       $("#updated").insertAdjacentHTML("afterend", `<div class="notice">Hinweis: ${failed.map((s) => esc(s.name)).join(", ")} konnte beim letzten Update nicht geladen werden. Es werden die zuletzt bekannten Stellen angezeigt.</div>`);
