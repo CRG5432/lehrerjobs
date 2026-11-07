@@ -136,6 +136,9 @@ input.field{width:90px}
 .card-foot a{font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap}
 .empty{text-align:center;color:var(--muted);padding:40px 10px}
 .empty .big{font-size:40px;display:block;margin-bottom:8px}
+.tag.other{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.card.partial h2 a{color:var(--text)}
+.section{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:10px 2px -2px}
 .notice{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:10px}
 footer{color:var(--muted);font-size:12.5px;padding:10px 0 40px;border-top:1px solid var(--line)}
 footer ul{padding-left:18px;margin:6px 0}
@@ -148,7 +151,7 @@ footer ul{padding-left:18px;margin:6px 0}
 <div class="hero">
   <div class="wrap">
     <header>
-      <div class="eyebrow">Ab Oberstufe · Aargau · Zürich · Umgebung</div>
+      <div class="eyebrow">Oberstufe · BG · Deutsch · Englisch · SHP</div>
       <h1>Offene Lehrerstellen</h1>
       <div class="sub" id="updated">Lade Stellen …</div>
       <div class="stats" id="stats"></div>
@@ -171,11 +174,11 @@ footer ul{padding-left:18px;margin:6px 0}
     <div class="group">
       <h3>Fach</h3>
       <div class="chips" id="f-subjects"></div>
-      <label class="toggle"><input type="checkbox" id="f-weak"> Auch Stellen, bei denen das Fach nur im Inseratstext erwähnt wird</label>
     </div>
     <div class="group">
-      <h3>Schulstufe</h3>
-      <div class="chips" id="f-levels"></div>
+      <h3>Wie streng?</h3>
+      <label class="toggle"><input type="checkbox" id="f-mixed"> Auch Stellen, die zusätzlich andere Fächer enthalten (z.&nbsp;B. Deutsch + Französisch)</label>
+      <label class="toggle"><input type="checkbox" id="f-unknown"> Auch Oberstufen-Stellen ohne erkennbare Fachangabe</label>
     </div>
     <div class="group">
       <h3>Pensum</h3>
@@ -199,8 +202,6 @@ footer ul{padding-left:18px;margin:6px 0}
     </div>
     <div class="group">
       <h3>Weitere</h3>
-      <label class="toggle"><input type="checkbox" id="f-teach" checked> Nur Unterrichtsstellen (ohne Schulleitung, Assistenz usw.)</label>
-      <label class="toggle"><input type="checkbox" id="f-courses"> Auch Kurse / Erwachsenenbildung (Klubschule, Nachhilfe …)</label>
       <label class="toggle"><input type="checkbox" id="f-new"> Nur neue Stellen (letzte 7 Tage)</label>
       <label class="toggle"><input type="checkbox" id="f-fav"> Nur gemerkte Stellen ★</label>
     </div>
@@ -233,13 +234,35 @@ footer ul{padding-left:18px;margin:6px 0}
     set(k, v) { try { localStorage.setItem("lj:" + k, JSON.stringify(v)); } catch {} },
   };
 
-  const LEVEL_ORDER = ["Gymnasium / Mittelschule", "Berufsfachschule", "Sekundarstufe I", "Heilpädagogik / Sonderschule", "Musikschule", "Hochschule", "Erwachsenenbildung / Kurse"];
-  const FAV_SUBJECTS = ["Bildnerisches Gestalten", "Deutsch", "Englisch"];
+  /* ---------- Profil: nur Oberstufe, nur diese Faecher ---------- */
+  const SEK = "Sekundarstufe I";
   const SPED = "Heilpädagogik / Sonderschule";
-  const LEVEL_LABEL = { [SPED]: "Sonderpädagogik / SHP" };
-  const lvLabel = (l) => LEVEL_LABEL[l] || l;
-  const isMine = (j, weak) => j.levels.includes(SPED) ||
-    (weak ? j.subjects.concat(j.subjects_text || []) : j.subjects).some((s) => FAV_SUBJECTS.includes(s));
+  const NOT_OBERSTUFE = ["Gymnasium / Mittelschule", "Berufsfachschule", "Hochschule", "Erwachsenenbildung / Kurse", "Musikschule"];
+  const MY = ["Bildnerisches Gestalten", "Deutsch", "Englisch"];
+  const MY_CHIPS = [
+    { id: "Bildnerisches Gestalten", label: "🎨 BG" },
+    { id: "Deutsch", label: "📖 Deutsch" },
+    { id: "Englisch", label: "💬 Englisch" },
+    { id: "SHP", label: "🤝 Sonderpädagogik" },
+  ];
+  const LABEL = { [SPED]: "Sonderpädagogik / SHP", [SEK]: "Oberstufe" };
+
+  // Faecher einer Stelle: aus Titel/Fachangabe, sonst aus dem Inseratstext
+  function eff(j) {
+    if (j.subjects.length) return j.subjects;
+    return j.isShp ? [] : j.subjects_text;   // bei SHP-Stellen ist der Text oft nur Beschreibung der Schule
+  }
+  // passt = nur ihre Faecher (oder SHP), teilweise = ihre + andere, offen = keine Fachangabe
+  function fitOf(j) {
+    const s = eff(j);
+    const mine = s.filter((x) => MY.includes(x)), other = s.filter((x) => !MY.includes(x));
+    if (j.isShp && !other.length) return "passt";
+    if (mine.length && !other.length) return "passt";
+    if (mine.length || j.isShp) return "teilweise";
+    if (!s.length) return "offen";
+    return "nein";
+  }
+
   const PENSUM = [
     { id: "klein", label: "Kleinpensum < 40 %", lo: 0, hi: 39 },
     { id: "teil", label: "Teilzeit 40–89 %", lo: 40, hi: 89 },
@@ -249,35 +272,24 @@ footer ul{padding-left:18px;margin:6px 0}
     { id: "dauer", label: "Feste Stelle" },
     { id: "stv", label: "Stellvertretung / befristet" },
   ];
-  const LEVEL_COLOR = {
-    "Gymnasium / Mittelschule": "--lv-gym", "Berufsfachschule": "--lv-bfs", "Sekundarstufe I": "--lv-sek",
-    "Primarschule": "--lv-pri", "Kindergarten": "--lv-kg", "Heilpädagogik / Sonderschule": "--lv-hp",
-  };
-  const lvVar = (l) => `var(${LEVEL_COLOR[l] || "--lv-other"})`;
   const QUICK = [
-    { label: "⭐ Meine Fächer", apply: (f) => (f.mine = !f.mine), on: (f) => f.mine },
-    { label: "🎨 BG", apply: (f) => toggleIn(f.subjects, "Bildnerisches Gestalten") , on: (f) => f.subjects.includes("Bildnerisches Gestalten") },
-    { label: "📖 Deutsch", apply: (f) => toggleIn(f.subjects, "Deutsch"), on: (f) => f.subjects.includes("Deutsch") },
-    { label: "💬 Englisch", apply: (f) => toggleIn(f.subjects, "Englisch"), on: (f) => f.subjects.includes("Englisch") },
-    { label: "🤝 Sonderpädagogik", apply: (f) => toggleIn(f.levels, SPED), on: (f) => f.levels.includes(SPED) },
-    { label: "🎓 Gymi", apply: (f) => toggleIn(f.levels, "Gymnasium / Mittelschule"), on: (f) => f.levels.includes("Gymnasium / Mittelschule") },
-    { label: "🛠️ Berufsschule", apply: (f) => toggleIn(f.levels, "Berufsfachschule"), on: (f) => f.levels.includes("Berufsfachschule") },
-    { label: "Sek I", apply: (f) => toggleIn(f.levels, "Sekundarstufe I"), on: (f) => f.levels.includes("Sekundarstufe I") },
+    ...MY_CHIPS.map((c) => ({ label: c.label, apply: (f) => toggleIn(f.subjects, c.id), on: (f) => f.subjects.includes(c.id) })),
     { label: "Stellvertretungen", apply: (f) => toggleIn(f.kinds, "stv"), on: (f) => f.kinds.includes("stv") },
     { label: "✨ Neu", apply: (f) => (f.onlyNew = !f.onlyNew), on: (f) => f.onlyNew },
     { label: "★ Gemerkt", apply: (f) => (f.onlyFav = !f.onlyFav), on: (f) => f.onlyFav },
+    { label: "＋ mit weiteren Fächern", apply: (f) => (f.mixed = !f.mixed), on: (f) => f.mixed },
   ];
 
-  const DEFAULTS = { q: "", subjects: [], levels: [], pensum: [], kinds: [], cantons: [], weak: false, mine: false,
-    home: "5432", radius: 0, teach: true, courses: false, onlyNew: false, onlyFav: false, sort: "new" };
-  let F = Object.assign({}, DEFAULTS, store.get("filters", {}));
-  ["subjects", "levels", "pensum", "kinds", "cantons"].forEach((k) => { if (!Array.isArray(F[k])) F[k] = []; });
+  const DEFAULTS = { q: "", subjects: [], pensum: [], kinds: [], cantons: [], mixed: false, unknown: false,
+    home: "5432", radius: 0, onlyNew: false, onlyFav: false, sort: "new" };
+  let F = Object.assign({}, DEFAULTS, store.get("filters2", {}));
+  ["subjects", "pensum", "kinds", "cantons"].forEach((k) => { if (!Array.isArray(F[k])) F[k] = []; });
+  F.subjects = F.subjects.filter((s) => MY_CHIPS.some((c) => c.id === s));
   let favs = new Set(store.get("favs", []));
   let DATA = null, PLZ = null, HOME = null;
-  let showAllSubjects = false;
 
   function toggleIn(arr, v) { const i = arr.indexOf(v); i >= 0 ? arr.splice(i, 1) : arr.push(v); }
-  function save() { store.set("filters", F); }
+  function save() { store.set("filters2", F); }
   function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -297,23 +309,20 @@ footer ul{padding-left:18px;margin:6px 0}
   function dist(j) { return HOME && j.lat != null ? km(HOME, [j.lat, j.lon]) : null; }
 
   /* ---------- Filtern ---------- */
+  function fitAllowed(j) {
+    return j.fit === "passt" || (F.mixed && j.fit === "teilweise") || (F.unknown && j.fit === "offen");
+  }
   function matches(j, skip) {
-    if (F.teach && j.role !== "Lehrperson") return false;
-    const isCourse = j.levels.length && j.levels.every((l) => l === "Erwachsenenbildung / Kurse");
-    if (!F.courses && isCourse) return false;
+    if (!fitAllowed(j)) return false;
     if (F.onlyFav && !favs.has(j.id)) return false;
     if (F.onlyNew && daysAgo(j.first_seen) > 7) return false;
-    if (F.mine && !isMine(j, F.weak)) return false;
     if (skip !== "subjects" && F.subjects.length) {
-      const subj = F.weak ? j.subjects.concat(j.subjects_text || []) : j.subjects;
-      if (!F.subjects.some((s) => subj.includes(s))) return false;
+      const s = eff(j);
+      if (!F.subjects.some((x) => (x === "SHP" ? j.isShp : s.includes(x)))) return false;
     }
-    if (skip !== "levels" && F.levels.length && !F.levels.some((l) => j.levels.includes(l))) return false;
-    if (skip !== "pensum" && F.pensum.length) {
-      if (j.pmax != null) {
-        const lo = j.pmin ?? j.pmax, hi = j.pmax;
-        if (!F.pensum.some((id) => { const p = PENSUM.find((x) => x.id === id); return hi >= p.lo && lo <= p.hi; })) return false;
-      }
+    if (skip !== "pensum" && F.pensum.length && j.pmax != null) {
+      const lo = j.pmin ?? j.pmax, hi = j.pmax;
+      if (!F.pensum.some((id) => { const p = PENSUM.find((x) => x.id === id); return hi >= p.lo && lo <= p.hi; })) return false;
     }
     if (skip !== "kinds" && F.kinds.length) {
       const stv = j.substitute || j.temporary === true;
@@ -322,7 +331,7 @@ footer ul{padding-left:18px;margin:6px 0}
     if (skip !== "cantons" && F.cantons.length && !F.cantons.includes(j.canton)) return false;
     if (F.radius > 0) { const d = dist(j); if (d != null && d > F.radius) return false; }
     if (F.q) {
-      const hay = (j.title + " " + j.employer + " " + j.place + " " + j.text + " " + j.subjects.join(" ") + " " + j.levels.join(" ")).toLowerCase();
+      const hay = (j.title + " " + j.employer + " " + j.place + " " + j.text + " " + eff(j).join(" ")).toLowerCase();
       if (!F.q.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w))) return false;
     }
     return true;
@@ -335,7 +344,8 @@ footer ul{padding-left:18px;margin:6px 0}
       start: (a, b) => startKey(a).localeCompare(startKey(b)),
       pensum: (a, b) => (b.pmax ?? -1) - (a.pmax ?? -1),
     }[F.sort] || (() => 0);
-    return list.slice().sort(by);
+    const rank = { passt: 0, teilweise: 1, offen: 2 };
+    return list.slice().sort((a, b) => (rank[a.fit] - rank[b.fit]) || by(a, b));
   }
   function startKey(j) { return !j.start ? "9999" : j.start === "sofort" ? "0000" : j.start; }
 
@@ -351,19 +361,11 @@ footer ul{padding-left:18px;margin:6px 0}
   }
 
   function renderFilters() {
-    // Faecher
-    const allSubj = [...new Set(DATA.jobs.flatMap((j) => j.subjects.concat(j.subjects_text || [])))];
-    const sc = counts("subjects", allSubj, (j) => (F.weak ? j.subjects.concat(j.subjects_text || []) : j.subjects));
-    const rest = allSubj.filter((s) => !FAV_SUBJECTS.includes(s)).sort((a, b) => (sc[b] || 0) - (sc[a] || 0) || a.localeCompare(b, "de"));
-    const subjList = FAV_SUBJECTS.concat(rest);
-    const visible = showAllSubjects ? subjList : subjList.filter((s, i) => i < 8 || F.subjects.includes(s));
-    $("#f-subjects").innerHTML = visible.map((s) => chipHTML("subjects", s, s, sc[s] || 0, F.subjects.includes(s))).join("") +
-      (subjList.length > 8 ? `<button class="more" id="moreSubj">${showAllSubjects ? "weniger" : `alle ${subjList.length} Fächer`}</button>` : "");
-    $("#f-weak").checked = F.weak;
-
-    const lc = counts("levels", LEVEL_ORDER, (j) => j.levels);
-    $("#f-levels").innerHTML = LEVEL_ORDER.filter((l) => l !== "Erwachsenenbildung / Kurse" || F.courses)
-      .map((l) => chipHTML("levels", l, lvLabel(l), lc[l] || 0, F.levels.includes(l))).join("");
+    const sc = counts("subjects", MY_CHIPS.map((c) => c.id), (j) => {
+      const s = eff(j).filter((x) => MY.includes(x)); if (j.isShp) s.push("SHP"); return s;
+    });
+    $("#f-subjects").innerHTML = MY_CHIPS.map((c) => chipHTML("subjects", c.id, c.label, sc[c.id], F.subjects.includes(c.id))).join("");
+    $("#f-mixed").checked = F.mixed; $("#f-unknown").checked = F.unknown;
 
     const pc = counts("pensum", PENSUM.map((p) => p.id), (j) => j.pmax == null ? [] :
       PENSUM.filter((p) => j.pmax >= p.lo && (j.pmin ?? j.pmax) <= p.hi).map((p) => p.id));
@@ -377,14 +379,13 @@ footer ul{padding-left:18px;margin:6px 0}
     $("#f-canton").innerHTML = cantons.map((c) => chipHTML("cantons", c, "Kt. " + c, cc[c], F.cantons.includes(c))).join("");
 
     $("#f-home").value = F.home; $("#f-radius").value = String(F.radius);
-    $("#f-teach").checked = F.teach; $("#f-courses").checked = F.courses;
     $("#f-new").checked = F.onlyNew; $("#f-fav").checked = F.onlyFav;
     $("#sort").value = F.sort;
 
     $("#quick").innerHTML = QUICK.map((q, i) => `<button class="chip" data-quick="${i}" aria-pressed="${q.on(F)}">${esc(q.label)}</button>`).join("");
 
-    const n = F.subjects.length + F.levels.length + F.pensum.length + F.kinds.length + F.cantons.length +
-      (F.radius > 0) + F.onlyNew + F.onlyFav + (!F.teach) + F.courses + F.weak + F.mine;
+    const n = F.subjects.length + F.pensum.length + F.kinds.length + F.cantons.length +
+      (F.radius > 0) + F.onlyNew + F.onlyFav + F.mixed + F.unknown;
     $("#fcount").hidden = !n; $("#fcount").textContent = n;
   }
 
@@ -396,14 +397,14 @@ footer ul{padding-left:18px;margin:6px 0}
   }
   function card(j) {
     const d = dist(j);
-    const isNew = daysAgo(j.first_seen) <= 3;
-    const stv = j.substitute || j.temporary === true;
     const tags = [];
-    if (isNew) tags.push(`<span class="tag new">NEU</span>`);
-    j.subjects.forEach((s) => tags.push(`<span class="tag subj">${esc(s)}</span>`));
-    if (F.weak || F.subjects.some((s) => (j.subjects_text || []).includes(s)))
-      (j.subjects_text || []).filter((s) => F.subjects.includes(s)).forEach((s) => tags.push(`<span class="tag subj weak" title="nur im Text erwähnt">${esc(s)}?</span>`));
-    j.levels.forEach((l) => tags.push(`<span class="tag lvtag" style="--c:${lvVar(l)}">${esc(lvLabel(l))}</span>`));
+    if (daysAgo(j.first_seen) <= 3) tags.push(`<span class="tag new">NEU</span>`);
+    const s = eff(j);
+    const fromText = !j.subjects.length && s.length;
+    s.filter((x) => MY.includes(x)).forEach((x) => tags.push(`<span class="tag subj"${fromText ? ' title="aus dem Inseratstext"' : ""}>${esc(x)}</span>`));
+    if (j.isShp) tags.push(`<span class="tag lvtag" style="--c:var(--lv-hp)">${esc(LABEL[SPED])}</span>`);
+    s.filter((x) => !MY.includes(x)).forEach((x) => tags.push(`<span class="tag other" title="weiteres Fach">+ ${esc(x)}</span>`));
+    if (j.fit === "offen") tags.push(`<span class="tag other">Fächer nicht angegeben</span>`);
     const pt = pensumText(j); if (pt) tags.push(`<span class="tag">${esc(pt)}</span>`);
     if (j.substitute) tags.push(`<span class="tag sub">Stellvertretung</span>`);
     else if (j.temporary === true) tags.push(`<span class="tag sub">befristet</span>`);
@@ -416,7 +417,8 @@ footer ul{padding-left:18px;margin:6px 0}
     const where = [j.employer, [j.place, j.canton && !String(j.place).includes(j.canton) ? j.canton : ""].filter(Boolean).join(" ")]
       .filter(Boolean).join(" · ") + (d != null ? ` · ${d < 1 ? "<1" : Math.round(d)} km` : "");
     const pub = j.published ? `inseriert ${fmtDate(j.published)}` : `gefunden ${fmtDate(j.first_seen)}`;
-    return `<article class="card${favs.has(j.id) ? " fav" : ""}" style="--lv:${lvVar(j.levels[0])}">
+    const color = j.fit === "passt" ? (j.isShp && !s.some((x) => MY.includes(x)) ? "var(--lv-hp)" : "var(--accent)") : "var(--lv-other)";
+    return `<article class="card${favs.has(j.id) ? " fav" : ""}${j.fit !== "passt" ? " partial" : ""}" style="--lv:${color}">
       <div class="card-top">
         <h2><a href="${esc(j.url)}" target="_blank" rel="noopener">${esc(j.title)}</a></h2>
         <button class="star" data-fav="${esc(j.id)}" aria-pressed="${favs.has(j.id)}" aria-label="Merken">★</button>
@@ -434,10 +436,20 @@ footer ul{padding-left:18px;margin:6px 0}
     const res = sorted(DATA.jobs.filter((j) => matches(j)));
     $("#rescount").textContent = `${res.length} ${res.length === 1 ? "Stelle" : "Stellen"}`;
     if (!res.length) {
-      $("#list").innerHTML = `<div class="empty"><span class="big">🔍</span>Keine passenden Stellen gefunden.<br>Versuch es mit weniger Filtern – oder schau morgen wieder rein.</div>`;
+      const hint = !F.mixed ? `<br><button class="btn" id="tryMixed" style="margin-top:14px">Auch Stellen mit weiteren Fächern zeigen</button>` : "";
+      $("#list").innerHTML = `<div class="empty"><span class="big">🔍</span>Gerade keine Stelle, die genau passt.<br>Die Liste wird zweimal täglich aktualisiert.${hint}</div>`;
       return;
     }
-    $("#list").innerHTML = res.slice(0, renderLimit).map(card).join("") +
+    let html = "", lastFit = null;
+    res.slice(0, renderLimit).forEach((j) => {
+      if (j.fit !== lastFit && (F.mixed || F.unknown)) {
+        const t = { passt: "Passt genau", teilweise: "Mit weiteren Fächern", offen: "Ohne Fachangabe" }[j.fit];
+        html += `<div class="section">${t}</div>`;
+        lastFit = j.fit;
+      }
+      html += card(j);
+    });
+    $("#list").innerHTML = html +
       (res.length > renderLimit ? `<button class="btn" id="moreRes" style="align-self:center">Weitere ${Math.min(60, res.length - renderLimit)} anzeigen</button>` : "");
   }
   function render() { renderFilters(); renderList(); save(); }
@@ -471,7 +483,7 @@ footer ul{padding-left:18px;margin:6px 0}
       if (F.onlyFav) render();
       return;
     }
-    if (e.target.id === "moreSubj") { showAllSubjects = !showAllSubjects; renderFilters(); return; }
+    if (e.target.id === "tryMixed") { F.mixed = true; render(); return; }
     if (e.target.id === "moreRes") { renderLimit += 60; renderList(); return; }
   });
   const panel = $("#panel"), fbtn = $("#filterBtn");
@@ -481,9 +493,8 @@ footer ul{padding-left:18px;margin:6px 0}
   $("#resetBtn").addEventListener("click", async () => { F = JSON.parse(JSON.stringify(DEFAULTS)); await setHome(); render(); });
   let qt; $("#q").addEventListener("input", (e) => { clearTimeout(qt); qt = setTimeout(() => { F.q = e.target.value.trim(); renderLimit = 60; renderList(); save(); }, 150); });
   const bind = (id, key, fn) => $(id).addEventListener("change", async (e) => { F[key] = fn(e.target); if (key === "home") await setHome(); render(); });
-  bind("#f-weak", "weak", (t) => t.checked);
-  bind("#f-teach", "teach", (t) => t.checked);
-  bind("#f-courses", "courses", (t) => t.checked);
+  bind("#f-mixed", "mixed", (t) => t.checked);
+  bind("#f-unknown", "unknown", (t) => t.checked);
   bind("#f-new", "onlyNew", (t) => t.checked);
   bind("#f-fav", "onlyFav", (t) => t.checked);
   bind("#f-radius", "radius", (t) => +t.value);
@@ -501,30 +512,29 @@ footer ul{padding-left:18px;margin:6px 0}
       $("#updated").textContent = "Die Stellen konnten nicht geladen werden. Bitte später nochmals versuchen.";
       return;
     }
+    const all = DATA.jobs.length;
     DATA.jobs.forEach((j) => { j.subjects ||= []; j.subjects_text ||= []; j.levels ||= []; j.text ||= ""; });
-    // Nur ab Oberstufe: Stellen nur fuer Kindergarten/Primar ausblenden
-    const UPPER = ["Sekundarstufe I", "Gymnasium / Mittelschule", "Berufsfachschule", "Hochschule"];
-    const LOWER = ["Kindergarten", "Primarschule"];
-    DATA.jobs = DATA.jobs.filter((j) => !j.levels.some((l) => LOWER.includes(l)) || j.levels.some((l) => UPPER.includes(l)));
-    DATA.jobs.forEach((j) => { j.levels = j.levels.filter((l) => !LOWER.includes(l)); });
+    // Nur Oberstufe (Real, Sek, Bez): Sek I erkannt, kein Gymi/Berufsschule/Hochschule, nur Unterricht
+    DATA.jobs = DATA.jobs.filter((j) => j.role === "Lehrperson" && j.levels.includes(SEK) &&
+      !j.levels.some((l) => NOT_OBERSTUFE.includes(l)));
+    DATA.jobs.forEach((j) => { j.isShp = j.levels.includes(SPED); j.fit = fitOf(j); });
+    DATA.jobs = DATA.jobs.filter((j) => j.fit !== "nein");
+
     const up = new Date(DATA.updated);
-    const newCount = DATA.jobs.filter((j) => daysAgo(j.first_seen) <= 1 && j.role === "Lehrperson").length;
-    $("#updated").innerHTML = `Aktualisiert ${up.toLocaleDateString("de-CH", { weekday: "short", day: "numeric", month: "long" })}, ${up.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })} · <b>${DATA.jobs.length}</b> Stellen` +
-      (newCount && newCount < DATA.jobs.length ? ` · <b>${newCount}</b> neu seit gestern` : "");
-    const teach = DATA.jobs.filter((j) => j.role === "Lehrperson" &&
-      !(j.levels.length && j.levels.every((l) => l === "Erwachsenenbildung / Kurse")));
-    const week = teach.filter((j) => daysAgo(j.first_seen) <= 7).length;
-    const fav = teach.filter((j) => isMine(j, false)).length;
+    $("#updated").innerHTML = `Aktualisiert ${up.toLocaleDateString("de-CH", { weekday: "short", day: "numeric", month: "long" })}, ${up.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })} · ${all} Stellen geprüft`;
+    const exact = DATA.jobs.filter((j) => j.fit === "passt");
+    const week = exact.filter((j) => daysAgo(j.first_seen) <= 7).length;
+    const mixed = DATA.jobs.filter((j) => j.fit === "teilweise").length;
     $("#stats").innerHTML =
-      `<button class="stat" data-stat="all"><b>${teach.length}</b><span>Unterrichts­stellen</span></button>` +
-      `<button class="stat" data-stat="new"><b>${week}</b><span>neu diese Woche</span></button>` +
-      `<button class="stat" data-stat="fav"><b>${fav}</b><span>in ihren Fächern</span></button>`;
+      `<button class="stat" data-stat="exact"><b>${exact.length}</b><span>passen genau</span></button>` +
+      `<button class="stat" data-stat="new"><b>${week}</b><span>davon neu diese Woche</span></button>` +
+      `<button class="stat" data-stat="mixed"><b>${mixed}</b><span>mit weiteren Fächern</span></button>`;
     $("#stats").addEventListener("click", (e) => {
       const b = e.target.closest("[data-stat]"); if (!b) return;
       const keep = { home: F.home, radius: F.radius, sort: F.sort };
       F = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), keep);
       if (b.dataset.stat === "new") F.onlyNew = true;
-      if (b.dataset.stat === "fav") F.mine = true;
+      if (b.dataset.stat === "mixed") F.mixed = true;
       renderLimit = 60; render();
       $("#bar").scrollIntoView({ behavior: "smooth" });
     });
@@ -532,9 +542,11 @@ footer ul{padding-left:18px;margin:6px 0}
     if (failed.length) {
       $("#updated").insertAdjacentHTML("afterend", `<div class="notice">Hinweis: ${failed.map((s) => esc(s.name)).join(", ")} konnte beim letzten Update nicht geladen werden. Es werden die zuletzt bekannten Stellen angezeigt.</div>`);
     }
-    $("#footer").innerHTML = `<b>Quellen</b> (werden automatisch jeden Morgen abgefragt):<ul>${DATA.sources.map((s) =>
+    $("#footer").innerHTML = `<b>So wird gefiltert:</b> Es werden nur Unterrichtsstellen an der Oberstufe (Real, Sek, Bez bzw. Sek A/B/C) gezeigt.
+      „Passt genau“ heisst: Im Inserat kommen nur BG, Deutsch, Englisch oder Sonderpädagogik vor.
+      Fächer werden automatisch aus Titel und Inseratstext erkannt und können danebenliegen. Massgebend ist immer das Originalinserat.
+      <br><br><b>Quellen</b> (zweimal täglich automatisch abgefragt):<ul>${DATA.sources.map((s) =>
       `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>: ${s.count} Stellen <span class="${s.ok ? "ok" : "bad"}">${s.ok ? "✓" : "✗ Fehler"}</span></li>`).join("")}</ul>
-      Fächer und Schulstufen werden automatisch aus den Inseraten erkannt und können danebenliegen. Massgebend ist immer das Originalinserat.
       Entfernungen: Luftlinie, Ortsdaten © <a href="https://www.geonames.org" target="_blank" rel="noopener">GeoNames</a> (CC BY 4.0).`;
     await setHome();
     render();
