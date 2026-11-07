@@ -62,6 +62,8 @@ h1{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:30px;line-height
 .greet b{font-family:Fraunces,Georgia,serif;font-size:26px;line-height:1}
 .greet .txt{line-height:1.3}
 .greet .txt small{display:block;opacity:.8;font-size:12.5px}
+.toportals{display:inline-block;margin-top:12px;color:var(--hero-ink);opacity:.9;font-size:13.5px;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4)}
+html{scroll-padding-top:150px}
 
 /* ---------- Leiste ---------- */
 .bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0 8px;border-bottom:1px solid transparent}
@@ -173,6 +175,15 @@ input.field.q{width:100%}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:12px;
   padding:10px 14px;font-size:14px;z-index:30;display:flex;gap:14px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
 .toast button{background:none;border:0;color:inherit;font-weight:700;cursor:pointer;text-decoration:underline;padding:0}
+.portals{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px 16px;margin:6px 0 24px;box-shadow:var(--shadow)}
+.portals h3{margin:0 0 4px;font-size:16px}
+.portals .hint{margin:0 0 12px;font-size:13px;color:var(--muted)}
+.ptabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.plinks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.plink{display:flex;justify-content:space-between;align-items:center;gap:6px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+  text-decoration:none;color:var(--text);background:var(--bg);font-size:14px;font-weight:500}
+.plink:hover{border-color:var(--accent)}
+.plink span{color:var(--accent);font-weight:600}
 .notice{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:12px}
 footer{color:var(--muted);font-size:12.5px;padding:12px 0 40px;border-top:1px solid var(--line)}
 footer ul{padding-left:18px;margin:6px 0}
@@ -193,6 +204,7 @@ footer ul{padding-left:18px;margin:6px 0}
       <h1>Offene Lehrerstellen</h1>
       <div class="updated" id="updated">Lade Stellen …</div>
       <div class="greet" id="greet" hidden></div>
+      <a class="toportals" href="#portals">🔎 Auch auf jobs.ch &amp; Co. suchen ↓</a>
     </header>
   </div>
 </div>
@@ -223,6 +235,13 @@ footer ul{padding-left:18px;margin:6px 0}
 
   <div class="listhead"><span id="rescount"></span><button class="link" id="markAll" hidden>Alle als gesehen markieren</button></div>
   <div class="list" id="list"></div>
+
+  <section class="portals" id="portals">
+    <h3>🔎 Auch auf anderen Portalen suchen</h3>
+    <p class="hint">Diese Seiten lassen sich nicht automatisch einlesen. Ein Tipp öffnet dort direkt die passende Suche, im Umkreis von 20 km um Baden.</p>
+    <div class="ptabs" id="ptabs"></div>
+    <div class="plinks" id="plinks"></div>
+  </section>
 
   <footer id="footer"></footer>
 </div>
@@ -613,6 +632,31 @@ footer ul{padding-left:18px;margin:6px 0}
   const bar = $("#bar");
   new IntersectionObserver(([en]) => bar.classList.toggle("stuck", !en.isIntersecting)).observe($("header"));
 
+  /* ---------- Weitere Portale (nur Links) ---------- */
+  const PSEARCH = [
+    { id: "BG", label: "🎨 BG", term: "Bildnerisches Gestalten" },
+    { id: "D", label: "📖 Deutsch", term: "Lehrperson Deutsch Oberstufe" },
+    { id: "E", label: "💬 Englisch", term: "Lehrperson Englisch Oberstufe" },
+    { id: "SHP", label: "🤝 SHP", term: "Schulische Heilpädagogik Oberstufe" },
+    { id: "ALL", label: "Oberstufe allgemein", term: "Lehrperson Oberstufe" },
+  ];
+  const PORTALS = [
+    { name: "jobs.ch", url: (t) => `https://www.jobs.ch/de/stellenangebote/?location=Baden&radius=20&term=${encodeURIComponent(t)}` },
+    { name: "jobup.ch", url: (t) => `https://www.jobup.ch/de/stellenangebote/?location=Baden&radius=20&term=${encodeURIComponent(t)}` },
+    { name: "publicjobs.ch", url: (t) => `https://www.publicjobs.ch/jobs?search=${encodeURIComponent(t)}&city=Baden&radius=20` },
+    { name: "sozjobs.ch", url: (t) => `https://www.sozjobs.ch/suche?searchterm=${encodeURIComponent(t)}` },
+  ];
+  let pSel = store.get("psel", "BG");
+  function renderPortals() {
+    $("#ptabs").innerHTML = PSEARCH.map((p) => `<button class="chip" data-psel="${p.id}" aria-pressed="${pSel === p.id}">${esc(p.label)}</button>`).join("");
+    const term = (PSEARCH.find((p) => p.id === pSel) || PSEARCH[0]).term;
+    $("#plinks").innerHTML = PORTALS.map((p) => `<a class="plink" href="${esc(p.url(term))}" target="_blank" rel="noopener">${esc(p.name)} <span>↗</span></a>`).join("");
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-psel]"); if (!b) return;
+    pSel = b.dataset.psel; store.set("psel", pSel); renderPortals();
+  });
+
   /* ---------- Umkreis ---------- */
   async function setHome() {
     if (!PLZ) { try { PLZ = await (await fetch("plz.json")).json(); } catch { PLZ = {}; } }
@@ -669,6 +713,7 @@ footer ul{padding-left:18px;margin:6px 0}
     store.set("firstVisit", firstVisit);
     store.set("lastVisit", today);
     await setHome();
+    renderPortals();
     render();
   }
   init();
