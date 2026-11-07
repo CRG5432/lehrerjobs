@@ -238,7 +238,7 @@ footer ul{padding-left:18px;margin:6px 0}
 
   <section class="portals" id="portals">
     <h3>🔎 Auch auf anderen Portalen suchen</h3>
-    <p class="hint">Diese Seiten lassen sich nicht automatisch einlesen. Ein Tipp öffnet dort direkt die passende Suche, im Umkreis von 20 km um Baden.</p>
+    <p class="hint">Diese Seiten lassen sich nicht automatisch einlesen. Ein Tipp öffnet dort direkt die Suche nach dem gewählten Beruf. Ort und Umkreis lassen sich dort einstellen.</p>
     <div class="ptabs" id="ptabs"></div>
     <div class="plinks" id="plinks"></div>
   </section>
@@ -641,9 +641,9 @@ footer ul{padding-left:18px;margin:6px 0}
     { id: "ALL", label: "Oberstufe allgemein", term: "Lehrperson Oberstufe" },
   ];
   const PORTALS = [
-    { name: "jobs.ch", url: (t) => `https://www.jobs.ch/de/stellenangebote/?location=Baden&radius=20&term=${encodeURIComponent(t)}` },
-    { name: "jobup.ch", url: (t) => `https://www.jobup.ch/de/stellenangebote/?location=Baden&radius=20&term=${encodeURIComponent(t)}` },
-    { name: "publicjobs.ch", url: (t) => `https://www.publicjobs.ch/jobs?search=${encodeURIComponent(t)}&city=Baden&radius=20` },
+    { name: "jobs.ch", url: (t) => `https://www.jobs.ch/de/stellenangebote/?term=${encodeURIComponent(t)}` },
+    { name: "jobup.ch", url: (t) => `https://www.jobup.ch/de/stellenangebote/?term=${encodeURIComponent(t)}` },
+    { name: "publicjobs.ch", url: (t) => `https://www.publicjobs.ch/jobs?search=${encodeURIComponent(t)}` },
     { name: "sozjobs.ch", url: (t) => `https://www.sozjobs.ch/suche?searchterm=${encodeURIComponent(t)}` },
   ];
   let pSel = store.get("psel", "BG");
