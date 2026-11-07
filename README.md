@@ -1,0 +1,30 @@
+# Lehrerstellen
+
+Persönliche Übersicht offener Lehrerstellen rund um Neuenhof/Spreitenbach (AG/ZH),
+mit Filtern für Fach, Schulstufe, Pensum, Stellvertretungen und Umkreis.
+
+- **Webseite:** `docs/index.html` (wird über GitHub Pages veröffentlicht)
+- **Daten:** `docs/jobs.json`, automatisch erzeugt von `scraper/fetch_jobs.py`
+- **Automatik:** `.github/workflows/update.yml` läuft zweimal täglich auf GitHub
+
+## Quellen
+
+| Quelle | Inhalt |
+|---|---|
+| schulen-aargau.ch/stellen | Volksschule Aargau (Kindergarten bis Bezirksschule, Stellvertretungen) |
+| ag.ch/stellen | Kanton Aargau: Kantonsschulen, Berufsfachschulen |
+| stellenboersevsa.ch | Volksschule Kanton Zürich (Dauerstellen + Stellvertretungen) |
+| job-room.ch | Stellenbörse des Bundes (AG, ZH, LU, ZG, SO, BL, BS, SZ) |
+
+## Lokal testen
+
+```
+python scraper/fetch_jobs.py
+cd docs && python -m http.server 8000
+```
+
+Dann http://localhost:8000 öffnen.
+
+## Manuell aktualisieren
+
+Auf GitHub: *Actions → Stellen aktualisieren → Run workflow*.

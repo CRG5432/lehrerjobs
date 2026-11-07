@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181c" media="(prefers-color-scheme: dark)">
+<title>Lehrerstellen</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%232f6b5e'/><path d='M14 24 32 15l18 9-18 9z' fill='%23fff'/><path d='M22 29v10c0 3 5 6 10 6s10-3 10-6V29' fill='none' stroke='%23fff' stroke-width='4'/></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%232f6b5e'/><path d='M14 24 32 15l18 9-18 9z' fill='%23fff'/><path d='M22 29v10c0 3 5 6 10 6s10-3 10-6V29' fill='none' stroke='%23fff' stroke-width='4'/></svg>">
+<style>
+:root{
+  --bg:#f6f4ef; --surface:#ffffff; --surface-2:#efece5; --text:#1d1f23; --muted:#62666e;
+  --line:#dedad1; --accent:#2f6b5e; --accent-ink:#ffffff; --accent-soft:#dcebe6;
+  --new:#b4451f; --new-soft:#f8e3d9; --star:#c98a06; --warn:#8a5a00; --warn-soft:#fbefd2;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16181c; --surface:#1f2228; --surface-2:#282c33; --text:#eceae6; --muted:#a3a7ae;
+    --line:#343941; --accent:#6fbfa9; --accent-ink:#0f1a17; --accent-soft:#233a34;
+    --new:#f0906b; --new-soft:#3b261d; --star:#f2bc3d; --warn:#f2c46b; --warn-soft:#3a2f17;
+    --shadow:none; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16181c; --surface:#1f2228; --surface-2:#282c33; --text:#eceae6; --muted:#a3a7ae;
+  --line:#343941; --accent:#6fbfa9; --accent-ink:#0f1a17; --accent-soft:#233a34;
+  --new:#f0906b; --new-soft:#3b261d; --star:#f2bc3d; --warn:#f2c46b; --warn-soft:#3a2f17;
+  --shadow:none; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+header{padding:20px 0 8px}
+h1{font-size:24px;line-height:1.2;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px}
+.sub b{color:var(--text);font-weight:600}
+
+/* Suche + Filter */
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 10px;border-bottom:1px solid transparent}
+.bar.stuck{border-bottom-color:var(--line)}
+.searchrow{display:flex;gap:8px}
+.search{flex:1;min-width:0;height:44px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:0 14px;outline:none}
+.search:focus{border-color:var(--accent)}
+.btn{height:44px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:0 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn .count{background:var(--accent-ink);color:var(--accent);border-radius:99px;font-size:12px;font-weight:700;padding:1px 7px}
+.quick{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.quick::-webkit-scrollbar{display:none}
+
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;cursor:pointer;font-size:14px;line-height:1.2;user-select:none}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip small{opacity:.7;margin-left:3px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 16px 14px;margin:8px 0 4px;box-shadow:var(--shadow)}
+.panel[hidden]{display:none}
+.group{padding:12px 0 4px;border-bottom:1px solid var(--line)}
+.group:last-of-type{border-bottom:0}
+.group h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row label{display:flex;align-items:center;gap:6px}
+.field{height:38px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:0 10px}
+input.field{width:90px}
+.toggle{display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer}
+.toggle input{flex:none;width:20px;height:20px;margin:0;accent-color:var(--accent)}
+.panel-foot{display:flex;justify-content:space-between;gap:8px;padding-top:12px}
+.more{background:none;border:0;color:var(--accent);cursor:pointer;padding:6px 2px;font-size:14px}
+
+/* Ergebnisse */
+.resbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 0 6px;color:var(--muted);font-size:14px}
+.resbar select{height:34px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:0 8px}
+.list{display:flex;flex-direction:column;gap:10px;padding-bottom:40px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 14px 12px;box-shadow:var(--shadow)}
+.card-top{display:flex;gap:10px;align-items:flex-start}
+.card h2{font-size:16px;line-height:1.3;margin:0;flex:1;min-width:0;overflow-wrap:anywhere}
+.card h2 a{color:var(--text);text-decoration:none}
+.card h2 a:hover{text-decoration:underline}
+.star{flex:none;background:none;border:0;cursor:pointer;font-size:22px;line-height:1;color:var(--line);padding:0 2px;margin:-2px -4px 0 0}
+.star[aria-pressed="true"]{color:var(--star)}
+.where{color:var(--muted);font-size:14px;margin-top:3px;overflow-wrap:anywhere}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.tag{font-size:12.5px;border-radius:7px;padding:2px 8px;background:var(--surface-2);white-space:nowrap}
+.tag.subj{background:var(--accent-soft)}
+.tag.subj.weak{background:transparent;border:1px dashed var(--line)}
+.tag.new{background:var(--new-soft);color:var(--new);font-weight:700}
+.tag.sub{background:var(--warn-soft);color:var(--warn)}
+.card details{margin-top:8px}
+.card summary{cursor:pointer;color:var(--muted);font-size:13px;list-style:none}
+.card summary::-webkit-details-marker{display:none}
+.card summary::before{content:"▸ ";}
+.card details[open] summary::before{content:"▾ ";}
+.card details p{margin:6px 0 0;font-size:14px;color:var(--text);white-space:pre-line}
+.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.card-foot a{font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.notice{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:10px}
+footer{color:var(--muted);font-size:12.5px;padding:10px 0 40px;border-top:1px solid var(--line)}
+footer ul{padding-left:18px;margin:6px 0}
+.ok{color:var(--accent)} .bad{color:var(--new)}
+@media (min-width:640px){ h1{font-size:28px} .card{padding:16px 18px 14px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Offene Lehrerstellen</h1>
+    <div class="sub" id="updated">Lade Stellen …</div>
+  </header>
+</div>
+
+<div class="bar" id="bar">
+  <div class="wrap">
+    <div class="searchrow">
+      <input class="search" id="q" type="search" placeholder="Suchen: Schule, Ort, Stichwort …" autocomplete="off" enterkeyhint="search">
+      <button class="btn primary" id="filterBtn" aria-expanded="false" aria-controls="panel">Filter <span class="count" id="fcount" hidden></span></button>
+    </div>
+    <div class="quick" id="quick"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="panel" id="panel" hidden>
+    <div class="group">
+      <h3>Fach</h3>
+      <div class="chips" id="f-subjects"></div>
+      <label class="toggle"><input type="checkbox" id="f-weak"> Auch Stellen, bei denen das Fach nur im Inseratstext erwähnt wird</label>
+    </div>
+    <div class="group">
+      <h3>Schulstufe</h3>
+      <div class="chips" id="f-levels"></div>
+    </div>
+    <div class="group">
+      <h3>Pensum</h3>
+      <div class="chips" id="f-pensum"></div>
+    </div>
+    <div class="group">
+      <h3>Art der Stelle</h3>
+      <div class="chips" id="f-kind"></div>
+    </div>
+    <div class="group">
+      <h3>Umkreis</h3>
+      <div class="row">
+        <label>ab PLZ <input class="field" id="f-home" inputmode="numeric" maxlength="4" value="5432"></label>
+        <label>max. <select class="field" id="f-radius">
+          <option value="0">egal</option><option value="10">10 km</option><option value="20">20 km</option>
+          <option value="30">30 km</option><option value="40">40 km</option><option value="60">60 km</option>
+        </select></label>
+      </div>
+      <div class="sub" id="homeName" style="margin-top:6px"></div>
+      <div style="margin-top:10px"><div class="chips" id="f-canton"></div></div>
+    </div>
+    <div class="group">
+      <h3>Weitere</h3>
+      <label class="toggle"><input type="checkbox" id="f-teach" checked> Nur Unterrichtsstellen (ohne Schulleitung, Assistenz usw.)</label>
+      <label class="toggle"><input type="checkbox" id="f-courses"> Auch Kurse / Erwachsenenbildung (Klubschule, Nachhilfe …)</label>
+      <label class="toggle"><input type="checkbox" id="f-new"> Nur neue Stellen (letzte 7 Tage)</label>
+      <label class="toggle"><input type="checkbox" id="f-fav"> Nur gemerkte Stellen ★</label>
+    </div>
+    <div class="panel-foot">
+      <button class="btn" id="resetBtn">Zurücksetzen</button>
+      <button class="btn primary" id="doneBtn">Fertig</button>
+    </div>
+  </div>
+
+  <div class="resbar">
+    <span id="rescount"></span>
+    <select id="sort" aria-label="Sortierung">
+      <option value="new">Neueste zuerst</option>
+      <option value="near">Nächste zuerst</option>
+      <option value="start">Stellenantritt</option>
+      <option value="pensum">Pensum (hoch)</option>
+    </select>
+  </div>
+  <div class="list" id="list"></div>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (s) => document.querySelector(s);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("lj:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem("lj:" + k, JSON.stringify(v)); } catch {} },
+  };
+
+  const LEVEL_ORDER = ["Gymnasium / Mittelschule", "Berufsfachschule", "Sekundarstufe I", "Primarschule",
+    "Kindergarten", "Heilpädagogik / Sonderschule", "Musikschule", "Hochschule", "Erwachsenenbildung / Kurse"];
+  const FAV_SUBJECTS = ["Bildnerisches Gestalten", "Englisch"];
+  const PENSUM = [
+    { id: "klein", label: "Kleinpensum < 40 %", lo: 0, hi: 39 },
+    { id: "teil", label: "Teilzeit 40–89 %", lo: 40, hi: 89 },
+    { id: "voll", label: "Vollzeit ab 90 %", lo: 90, hi: 999 },
+  ];
+  const KINDS = [
+    { id: "dauer", label: "Feste Stelle" },
+    { id: "stv", label: "Stellvertretung / befristet" },
+  ];
+  const QUICK = [
+    { label: "Bildnerisches Gestalten", apply: (f) => toggleIn(f.subjects, "Bildnerisches Gestalten") , on: (f) => f.subjects.includes("Bildnerisches Gestalten") },
+    { label: "Englisch", apply: (f) => toggleIn(f.subjects, "Englisch"), on: (f) => f.subjects.includes("Englisch") },
+    { label: "Gymi", apply: (f) => toggleIn(f.levels, "Gymnasium / Mittelschule"), on: (f) => f.levels.includes("Gymnasium / Mittelschule") },
+    { label: "Berufsschule", apply: (f) => toggleIn(f.levels, "Berufsfachschule"), on: (f) => f.levels.includes("Berufsfachschule") },
+    { label: "Sek I", apply: (f) => toggleIn(f.levels, "Sekundarstufe I"), on: (f) => f.levels.includes("Sekundarstufe I") },
+    { label: "Stellvertretungen", apply: (f) => toggleIn(f.kinds, "stv"), on: (f) => f.kinds.includes("stv") },
+    { label: "Neu", apply: (f) => (f.onlyNew = !f.onlyNew), on: (f) => f.onlyNew },
+    { label: "★ Gemerkt", apply: (f) => (f.onlyFav = !f.onlyFav), on: (f) => f.onlyFav },
+  ];
+
+  const DEFAULTS = { q: "", subjects: [], levels: [], pensum: [], kinds: [], cantons: [], weak: false,
+    home: "5432", radius: 0, teach: true, courses: false, onlyNew: false, onlyFav: false, sort: "new" };
+  let F = Object.assign({}, DEFAULTS, store.get("filters", {}));
+  ["subjects", "levels", "pensum", "kinds", "cantons"].forEach((k) => { if (!Array.isArray(F[k])) F[k] = []; });
+  let favs = new Set(store.get("favs", []));
+  let DATA = null, PLZ = null, HOME = null;
+  let showAllSubjects = false;
+
+  function toggleIn(arr, v) { const i = arr.indexOf(v); i >= 0 ? arr.splice(i, 1) : arr.push(v); }
+  function save() { store.set("filters", F); }
+  function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+  function daysAgo(iso) { if (!iso) return 999; return Math.round((Date.parse(todayISO) - Date.parse(iso)) / 864e5); }
+  function fmtDate(iso) {
+    if (!iso) return "";
+    if (iso === "sofort") return "ab sofort";
+    const [y, m, d] = iso.split("-");
+    return `${+d}.${+m}.${y}`;
+  }
+  function km(a, b) {
+    const R = 6371, r = Math.PI / 180;
+    const dLat = (b[0] - a[0]) * r, dLon = (b[1] - a[1]) * r;
+    const x = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(x));
+  }
+  function dist(j) { return HOME && j.lat != null ? km(HOME, [j.lat, j.lon]) : null; }
+
+  /* ---------- Filtern ---------- */
+  function matches(j, skip) {
+    if (F.teach && j.role !== "Lehrperson") return false;
+    const isCourse = j.levels.length && j.levels.every((l) => l === "Erwachsenenbildung / Kurse");
+    if (!F.courses && isCourse) return false;
+    if (F.onlyFav && !favs.has(j.id)) return false;
+    if (F.onlyNew && daysAgo(j.first_seen) > 7) return false;
+    if (skip !== "subjects" && F.subjects.length) {
+      const subj = F.weak ? j.subjects.concat(j.subjects_text || []) : j.subjects;
+      if (!F.subjects.some((s) => subj.includes(s))) return false;
+    }
+    if (skip !== "levels" && F.levels.length && !F.levels.some((l) => j.levels.includes(l))) return false;
+    if (skip !== "pensum" && F.pensum.length) {
+      if (j.pmax != null) {
+        const lo = j.pmin ?? j.pmax, hi = j.pmax;
+        if (!F.pensum.some((id) => { const p = PENSUM.find((x) => x.id === id); return hi >= p.lo && lo <= p.hi; })) return false;
+      }
+    }
+    if (skip !== "kinds" && F.kinds.length) {
+      const stv = j.substitute || j.temporary === true;
+      if (!F.kinds.some((k) => (k === "stv" ? stv : !stv))) return false;
+    }
+    if (skip !== "cantons" && F.cantons.length && !F.cantons.includes(j.canton)) return false;
+    if (F.radius > 0) { const d = dist(j); if (d != null && d > F.radius) return false; }
+    if (F.q) {
+      const hay = (j.title + " " + j.employer + " " + j.place + " " + j.text + " " + j.subjects.join(" ") + " " + j.levels.join(" ")).toLowerCase();
+      if (!F.q.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w))) return false;
+    }
+    return true;
+  }
+
+  function sorted(list) {
+    const by = {
+      new: (a, b) => (b.first_seen || "").localeCompare(a.first_seen || "") || (b.published || "").localeCompare(a.published || ""),
+      near: (a, b) => (dist(a) ?? 9999) - (dist(b) ?? 9999),
+      start: (a, b) => startKey(a).localeCompare(startKey(b)),
+      pensum: (a, b) => (b.pmax ?? -1) - (a.pmax ?? -1),
+    }[F.sort] || (() => 0);
+    return list.slice().sort(by);
+  }
+  function startKey(j) { return !j.start ? "9999" : j.start === "sofort" ? "0000" : j.start; }
+
+  /* ---------- Render: Filter ---------- */
+  function counts(key, values, getter) {
+    const base = DATA.jobs.filter((j) => matches(j, key));
+    const c = Object.fromEntries(values.map((v) => [v, 0]));
+    base.forEach((j) => getter(j).forEach((v) => { if (v in c) c[v]++; }));
+    return c;
+  }
+  function chipHTML(group, value, label, n, on) {
+    return `<button class="chip" data-g="${group}" data-v="${esc(value)}" aria-pressed="${on}">${esc(label)}${n != null ? `<small>${n}</small>` : ""}</button>`;
+  }
+
+  function renderFilters() {
+    // Faecher
+    const allSubj = [...new Set(DATA.jobs.flatMap((j) => j.subjects.concat(j.subjects_text || [])))];
+    const sc = counts("subjects", allSubj, (j) => (F.weak ? j.subjects.concat(j.subjects_text || []) : j.subjects));
+    const rest = allSubj.filter((s) => !FAV_SUBJECTS.includes(s)).sort((a, b) => (sc[b] || 0) - (sc[a] || 0) || a.localeCompare(b, "de"));
+    const subjList = FAV_SUBJECTS.concat(rest);
+    const visible = showAllSubjects ? subjList : subjList.filter((s, i) => i < 8 || F.subjects.includes(s));
+    $("#f-subjects").innerHTML = visible.map((s) => chipHTML("subjects", s, s, sc[s] || 0, F.subjects.includes(s))).join("") +
+      (subjList.length > 8 ? `<button class="more" id="moreSubj">${showAllSubjects ? "weniger" : `alle ${subjList.length} Fächer`}</button>` : "");
+    $("#f-weak").checked = F.weak;
+
+    const lc = counts("levels", LEVEL_ORDER, (j) => j.levels);
+    $("#f-levels").innerHTML = LEVEL_ORDER.filter((l) => l !== "Erwachsenenbildung / Kurse" || F.courses)
+      .map((l) => chipHTML("levels", l, l, lc[l] || 0, F.levels.includes(l))).join("");
+
+    const pc = counts("pensum", PENSUM.map((p) => p.id), (j) => j.pmax == null ? [] :
+      PENSUM.filter((p) => j.pmax >= p.lo && (j.pmin ?? j.pmax) <= p.hi).map((p) => p.id));
+    $("#f-pensum").innerHTML = PENSUM.map((p) => chipHTML("pensum", p.id, p.label, pc[p.id], F.pensum.includes(p.id))).join("");
+
+    const kc = counts("kinds", ["dauer", "stv"], (j) => [(j.substitute || j.temporary === true) ? "stv" : "dauer"]);
+    $("#f-kind").innerHTML = KINDS.map((k) => chipHTML("kinds", k.id, k.label, kc[k.id], F.kinds.includes(k.id))).join("");
+
+    const cantons = [...new Set(DATA.jobs.map((j) => j.canton).filter(Boolean))].sort();
+    const cc = counts("cantons", cantons, (j) => [j.canton]);
+    $("#f-canton").innerHTML = cantons.map((c) => chipHTML("cantons", c, "Kt. " + c, cc[c], F.cantons.includes(c))).join("");
+
+    $("#f-home").value = F.home; $("#f-radius").value = String(F.radius);
+    $("#f-teach").checked = F.teach; $("#f-courses").checked = F.courses;
+    $("#f-new").checked = F.onlyNew; $("#f-fav").checked = F.onlyFav;
+    $("#sort").value = F.sort;
+
+    $("#quick").innerHTML = QUICK.map((q, i) => `<button class="chip" data-quick="${i}" aria-pressed="${q.on(F)}">${esc(q.label)}</button>`).join("");
+
+    const n = F.subjects.length + F.levels.length + F.pensum.length + F.kinds.length + F.cantons.length +
+      (F.radius > 0) + F.onlyNew + F.onlyFav + (!F.teach) + F.courses + F.weak;
+    $("#fcount").hidden = !n; $("#fcount").textContent = n;
+  }
+
+  /* ---------- Render: Liste ---------- */
+  function pensumText(j) {
+    if (j.pmax == null) return j.wl ? `${j.wl} Lektionen` : "";
+    const p = j.pmin != null && j.pmin !== j.pmax ? `${j.pmin}–${j.pmax} %` : `${j.pmax} %`;
+    return j.wl ? `${p} · ${j.wl} L.` : p;
+  }
+  function card(j) {
+    const d = dist(j);
+    const isNew = daysAgo(j.first_seen) <= 3;
+    const stv = j.substitute || j.temporary === true;
+    const tags = [];
+    if (isNew) tags.push(`<span class="tag new">NEU</span>`);
+    j.subjects.forEach((s) => tags.push(`<span class="tag subj">${esc(s)}</span>`));
+    if (F.weak || F.subjects.some((s) => (j.subjects_text || []).includes(s)))
+      (j.subjects_text || []).filter((s) => F.subjects.includes(s)).forEach((s) => tags.push(`<span class="tag subj weak" title="nur im Text erwähnt">${esc(s)}?</span>`));
+    j.levels.forEach((l) => tags.push(`<span class="tag">${esc(l)}</span>`));
+    const pt = pensumText(j); if (pt) tags.push(`<span class="tag">${esc(pt)}</span>`);
+    if (j.substitute) tags.push(`<span class="tag sub">Stellvertretung</span>`);
+    else if (j.temporary === true) tags.push(`<span class="tag sub">befristet</span>`);
+    else if (j.temporary === false) tags.push(`<span class="tag">unbefristet</span>`);
+    let when = "";
+    if (j.start) when = (j.start === "sofort" ? "ab sofort" : "ab " + fmtDate(j.start));
+    if (j.end) when += (when ? " " : "") + (/^\d{4}-/.test(j.end) ? "bis " + fmtDate(j.end) : j.end);
+    if (when) tags.push(`<span class="tag">${esc(when)}</span>`);
+
+    const where = [j.employer, [j.place, j.canton && !String(j.place).includes(j.canton) ? j.canton : ""].filter(Boolean).join(" ")]
+      .filter(Boolean).join(" · ") + (d != null ? ` · ${d < 1 ? "<1" : Math.round(d)} km` : "");
+    const pub = j.published ? `inseriert ${fmtDate(j.published)}` : `gefunden ${fmtDate(j.first_seen)}`;
+    return `<article class="card">
+      <div class="card-top">
+        <h2><a href="${esc(j.url)}" target="_blank" rel="noopener">${esc(j.title)}</a></h2>
+        <button class="star" data-fav="${esc(j.id)}" aria-pressed="${favs.has(j.id)}" aria-label="Merken">★</button>
+      </div>
+      <div class="where">${esc(where)}</div>
+      <div class="tags">${tags.join("")}</div>
+      ${j.text ? `<details><summary>Mehr anzeigen</summary><p>${esc(j.text)}</p></details>` : ""}
+      <div class="card-foot"><span>${esc(j.source)} · ${pub}</span>
+        <a href="${esc(j.url)}" target="_blank" rel="noopener">Zum Inserat ↗</a></div>
+    </article>`;
+  }
+
+  let renderLimit = 60;
+  function renderList() {
+    const res = sorted(DATA.jobs.filter((j) => matches(j)));
+    $("#rescount").textContent = `${res.length} ${res.length === 1 ? "Stelle" : "Stellen"}`;
+    if (!res.length) {
+      $("#list").innerHTML = `<div class="empty">Keine passenden Stellen gefunden.<br>Versuch es mit weniger Filtern.</div>`;
+      return;
+    }
+    $("#list").innerHTML = res.slice(0, renderLimit).map(card).join("") +
+      (res.length > renderLimit ? `<button class="btn" id="moreRes" style="align-self:center">Weitere ${Math.min(60, res.length - renderLimit)} anzeigen</button>` : "");
+  }
+  function render() { renderFilters(); renderList(); save(); }
+
+  /* ---------- Umkreis / PLZ ---------- */
+  async function loadPLZ() {
+    if (PLZ) return PLZ;
+    try { PLZ = await (await fetch("plz.json")).json(); } catch { PLZ = {}; }
+    return PLZ;
+  }
+  async function setHome() {
+    const p = await loadPLZ();
+    const c = p[F.home];
+    HOME = c || null;
+    $("#homeName").textContent = c ? `Entfernungen werden ab PLZ ${F.home} berechnet (Luftlinie).` : (F.home ? "PLZ nicht gefunden." : "");
+  }
+
+  /* ---------- Events ---------- */
+  document.addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-g]");
+    if (chip) { toggleIn(F[chip.dataset.g], chip.dataset.v); renderLimit = 60; render(); return; }
+    const q = e.target.closest("[data-quick]");
+    if (q) { QUICK[+q.dataset.quick].apply(F); renderLimit = 60; render(); return; }
+    const star = e.target.closest("[data-fav]");
+    if (star) {
+      const id = star.dataset.fav;
+      favs.has(id) ? favs.delete(id) : favs.add(id);
+      store.set("favs", [...favs]);
+      star.setAttribute("aria-pressed", favs.has(id));
+      if (F.onlyFav) render();
+      return;
+    }
+    if (e.target.id === "moreSubj") { showAllSubjects = !showAllSubjects; renderFilters(); return; }
+    if (e.target.id === "moreRes") { renderLimit += 60; renderList(); return; }
+  });
+  const panel = $("#panel"), fbtn = $("#filterBtn");
+  function openPanel(open) { panel.hidden = !open; fbtn.setAttribute("aria-expanded", open); }
+  fbtn.addEventListener("click", () => openPanel(panel.hidden));
+  $("#doneBtn").addEventListener("click", () => { openPanel(false); window.scrollTo({ top: 0, behavior: "smooth" }); });
+  $("#resetBtn").addEventListener("click", async () => { F = JSON.parse(JSON.stringify(DEFAULTS)); await setHome(); render(); });
+  let qt; $("#q").addEventListener("input", (e) => { clearTimeout(qt); qt = setTimeout(() => { F.q = e.target.value.trim(); renderLimit = 60; renderList(); save(); }, 150); });
+  const bind = (id, key, fn) => $(id).addEventListener("change", async (e) => { F[key] = fn(e.target); if (key === "home") await setHome(); render(); });
+  bind("#f-weak", "weak", (t) => t.checked);
+  bind("#f-teach", "teach", (t) => t.checked);
+  bind("#f-courses", "courses", (t) => t.checked);
+  bind("#f-new", "onlyNew", (t) => t.checked);
+  bind("#f-fav", "onlyFav", (t) => t.checked);
+  bind("#f-radius", "radius", (t) => +t.value);
+  bind("#f-home", "home", (t) => t.value.trim());
+  bind("#sort", "sort", (t) => t.value);
+  const bar = $("#bar");
+  new IntersectionObserver(([en]) => bar.classList.toggle("stuck", !en.isIntersecting)).observe(document.querySelector("header"));
+
+  /* ---------- Start ---------- */
+  async function init() {
+    try {
+      const r = await fetch("jobs.json?t=" + Date.now(), { cache: "no-store" });
+      DATA = await r.json();
+    } catch (e) {
+      $("#updated").textContent = "Die Stellen konnten nicht geladen werden. Bitte später nochmals versuchen.";
+      return;
+    }
+    DATA.jobs.forEach((j) => { j.subjects ||= []; j.subjects_text ||= []; j.levels ||= []; j.text ||= ""; });
+    const up = new Date(DATA.updated);
+    const newCount = DATA.jobs.filter((j) => daysAgo(j.first_seen) <= 1 && j.role === "Lehrperson").length;
+    $("#updated").innerHTML = `Aktualisiert ${up.toLocaleDateString("de-CH", { weekday: "short", day: "numeric", month: "long" })}, ${up.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })} · <b>${DATA.jobs.length}</b> Stellen` +
+      (newCount && newCount < DATA.jobs.length ? ` · <b>${newCount}</b> neu seit gestern` : "");
+    const failed = DATA.sources.filter((s) => !s.ok);
+    if (failed.length) {
+      $("#updated").insertAdjacentHTML("afterend", `<div class="notice">Hinweis: ${failed.map((s) => esc(s.name)).join(", ")} konnte beim letzten Update nicht geladen werden. Es werden die zuletzt bekannten Stellen angezeigt.</div>`);
+    }
+    $("#footer").innerHTML = `<b>Quellen</b> (werden automatisch jeden Morgen abgefragt):<ul>${DATA.sources.map((s) =>
+      `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>: ${s.count} Stellen <span class="${s.ok ? "ok" : "bad"}">${s.ok ? "✓" : "✗ Fehler"}</span></li>`).join("")}</ul>
+      Fächer und Schulstufen werden automatisch aus den Inseraten erkannt und können danebenliegen. Massgebend ist immer das Originalinserat.
+      Entfernungen: Luftlinie, Ortsdaten © <a href="https://www.geonames.org" target="_blank" rel="noopener">GeoNames</a> (CC BY 4.0).`;
+    await setHome();
+    render();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
