@@ -200,7 +200,7 @@ LEVELS: list[tuple[str, str]] = [
     ("Berufsfachschule", r"berufsfachschul|berufsschul|berufsmaturit|\bBMS\b|\bABU\b|allgemeinbildend|berufskunde|überbetriebliche|kaufmännische|wirtschaftsschule|berufsbildungszentrum|\bBBZ\b|gewerblich|berufsbildungsschule|schule für berufsbildung|\bKV\b"),
     ("Sekundarstufe I", r"sekundar(?!stufe ii)|bezirksschul|realschul|oberstufe|\bWAH\b|\bsek\b(?! ?ii)|zyklus 3|berufswahljahr|werkjahr|\bsek\s?[abc]\b"),
     ("Primarschule", r"primar|zyklus 2|mittelstufe|unterstufe|einführungsklasse|\b[1-6]\.(?:\s*[/-]\s*[1-6]\.)?\s*klasse"),
-    ("Kindergarten", r"kindergarten|\bkiga\b|zyklus 1"),
+    ("Kindergarten", r"kindergarten|\bkiga\b|zyklus 1|\bKG\b(?!\s*&)"),
     ("Heilpädagogik / Sonderschule", r"heilpäd|\bSHP\b|sonderschul|förderklass|sprachheil|logopäd|\bISF\b|\bIF\b|tagessonderschul"),
     ("Hochschule", r"hochschule|\bPHZH\b|\bFHNW\b|universität|\bZHAW\b|dozent"),
     ("Musikschule", r"musikschul|instrumentalunterricht"),

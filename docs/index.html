@@ -148,7 +148,7 @@ footer ul{padding-left:18px;margin:6px 0}
 <div class="hero">
   <div class="wrap">
     <header>
-      <div class="eyebrow">Aargau · Zürich · Umgebung</div>
+      <div class="eyebrow">Ab Oberstufe · Aargau · Zürich · Umgebung</div>
       <h1>Offene Lehrerstellen</h1>
       <div class="sub" id="updated">Lade Stellen …</div>
       <div class="stats" id="stats"></div>
@@ -233,8 +233,7 @@ footer ul{padding-left:18px;margin:6px 0}
     set(k, v) { try { localStorage.setItem("lj:" + k, JSON.stringify(v)); } catch {} },
   };
 
-  const LEVEL_ORDER = ["Gymnasium / Mittelschule", "Berufsfachschule", "Sekundarstufe I", "Primarschule",
-    "Kindergarten", "Heilpädagogik / Sonderschule", "Musikschule", "Hochschule", "Erwachsenenbildung / Kurse"];
+  const LEVEL_ORDER = ["Gymnasium / Mittelschule", "Berufsfachschule", "Sekundarstufe I", "Heilpädagogik / Sonderschule", "Musikschule", "Hochschule", "Erwachsenenbildung / Kurse"];
   const FAV_SUBJECTS = ["Bildnerisches Gestalten", "Deutsch", "Englisch"];
   const SPED = "Heilpädagogik / Sonderschule";
   const LEVEL_LABEL = { [SPED]: "Sonderpädagogik / SHP" };
@@ -503,6 +502,11 @@ footer ul{padding-left:18px;margin:6px 0}
       return;
     }
     DATA.jobs.forEach((j) => { j.subjects ||= []; j.subjects_text ||= []; j.levels ||= []; j.text ||= ""; });
+    // Nur ab Oberstufe: Stellen nur fuer Kindergarten/Primar ausblenden
+    const UPPER = ["Sekundarstufe I", "Gymnasium / Mittelschule", "Berufsfachschule", "Hochschule"];
+    const LOWER = ["Kindergarten", "Primarschule"];
+    DATA.jobs = DATA.jobs.filter((j) => !j.levels.some((l) => LOWER.includes(l)) || j.levels.some((l) => UPPER.includes(l)));
+    DATA.jobs.forEach((j) => { j.levels = j.levels.filter((l) => !LOWER.includes(l)); });
     const up = new Date(DATA.updated);
     const newCount = DATA.jobs.filter((j) => daysAgo(j.first_seen) <= 1 && j.role === "Lehrperson").length;
     $("#updated").innerHTML = `Aktualisiert ${up.toLocaleDateString("de-CH", { weekday: "short", day: "numeric", month: "long" })}, ${up.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })} · <b>${DATA.jobs.length}</b> Stellen` +
