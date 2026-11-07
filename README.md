@@ -14,6 +14,7 @@ mit Filtern für Fach, Schulstufe, Pensum, Stellvertretungen und Umkreis.
 | schulen-aargau.ch/stellen | Volksschule Aargau (Kindergarten bis Bezirksschule, Stellvertretungen) |
 | ag.ch/stellen | Kanton Aargau: Kantonsschulen, Berufsfachschulen |
 | stellenboersevsa.ch | Volksschule Kanton Zürich (Dauerstellen + Stellvertretungen) |
+| sonderpaedagogisches.stellenboersevsa.ch | Sonderschulen Kanton Zürich (Unterricht) |
 | job-room.ch | Stellenbörse des Bundes (AG, ZH, LU, ZG, SO, BL, BS, SZ) |
 
 ## Lokal testen
@@ -28,5 +29,3 @@ Dann http://localhost:8000 öffnen.
 ## Manuell aktualisieren
 
 Auf GitHub: *Actions → Stellen aktualisieren → Run workflow*.
-
-| sonderpaedagogisches.stellenboersevsa.ch | Sonderschulen Kanton Zürich (Unterricht) |
