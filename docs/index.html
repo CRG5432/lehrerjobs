@@ -71,6 +71,7 @@ h1{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:30px;line-height
 .tab{flex:1 0 auto;border:0;background:transparent;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:14px;font-weight:500;color:var(--muted);white-space:nowrap}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .tab .n{font-size:12px;font-weight:600;margin-left:4px;opacity:.75}
+.tabsep{flex:none;width:1px;background:var(--line);margin:6px 4px}
 .tab .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--new);margin-left:5px;vertical-align:1px}
 .filterrow{display:flex;gap:6px;align-items:center;margin-top:10px}
 .subjects{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
@@ -212,7 +213,8 @@ footer ul{padding-left:18px;margin:6px 0}
     <h3>👋 So funktioniert's</h3>
     <ol>
       <li>Hier stehen nur Stellen an der <b>Oberstufe</b> mit <b>BG, Deutsch, Englisch oder Sonderpädagogik</b>, und die Liste aktualisiert sich zweimal täglich von selbst.</li>
-      <li>Tippe oben auf ein <b>Fach</b>, um nur diese Stellen zu sehen. Unter <b>Filter</b> gibt es Pensum, Umkreis und mehr.</li>
+      <li>Oben wählst du die Ansicht: <b>Alle</b>, nur <b>Neue</b>, <b>Passt genau</b> (nur ihre Fächer) oder <b>Weitere Fächer</b> (z.&nbsp;B. Deutsch + Französisch).</li>
+      <li>Tippe auf ein <b>Fach</b>, um nur diese Stellen zu sehen. Unter <b>Filter</b> gibt es Pensum, Umkreis und mehr.</li>
       <li>Bei jeder Stelle kannst du sie <b>☆ merken</b>, als <b>✓ beworben</b> markieren oder <b>✕ ausblenden</b>. Oben in den Reitern findest du sie wieder.</li>
       <li>Stellen, die du schon angeschaut hast, werden <b>grau</b>. Neue sind mit <b>NEU</b> markiert.</li>
     </ol>
@@ -230,16 +232,7 @@ footer ul{padding-left:18px;margin:6px 0}
   <div class="grip"></div>
   <div class="wrap">
     <h2 id="sheetTitle">Filter</h2>
-
-    <div class="group">
-      <h3>Wie streng nach Fach?</h3>
-      <p class="hint">Viele Oberstufen-Stellen kombinieren mehrere Fächer, z.&nbsp;B. Deutsch + Französisch.</p>
-      <div class="seg" id="segStrict">
-        <button data-strict="0">Nur ihre Fächer</button>
-        <button data-strict="1">Auch mit anderen Fächern</button>
-      </div>
-      <label class="toggle" style="margin-top:8px"><input type="checkbox" id="f-unknown"> Auch Stellen ohne Fachangabe zeigen</label>
-    </div>
+    <p class="hint" style="margin:0;font-size:13px;color:var(--muted)">Gilt für die Reiter Alle, Neu, Passt genau und Weitere Fächer.</p>
 
     <div class="group">
       <h3>Pensum</h3>
@@ -311,11 +304,17 @@ footer ul{padding-left:18px;margin:6px 0}
   ];
   const KINDS = [{ id: "dauer", label: "Feste Stelle" }, { id: "stv", label: "Stellvertretung / befristet" }];
   const TABS = [
-    { id: "open", label: "Offen" },
+    { id: "all", label: "Alle" },
+    { id: "new", label: "✨ Neu" },
+    { id: "exact", label: "Passt genau" },
+    { id: "mixed", label: "＋ Weitere Fächer" },
+    { sep: true },
     { id: "fav", label: "☆ Gemerkt" },
     { id: "applied", label: "✓ Beworben" },
     { id: "hidden", label: "Ausgeblendet" },
   ];
+  const VIEW_TABS = ["all", "new", "exact", "mixed"];
+  const isView = (t) => VIEW_TABS.includes(t);
 
   function eff(j) { return j.subjects.length ? j.subjects : (j.isShp ? [] : j.subjects_text); }
   function fitOf(j) {
@@ -329,7 +328,7 @@ footer ul{padding-left:18px;margin:6px 0}
   const DEFAULTS = { subjects: [], strict: true, unknown: false, pensum: [], kinds: [], cantons: [], home: "5432", radius: 0, q: "", sort: "new" };
   let F = Object.assign({}, DEFAULTS, store.get("filters3", {}));
   ["subjects", "pensum", "kinds", "cantons"].forEach((k) => { if (!Array.isArray(F[k])) F[k] = []; });
-  let tab = store.get("tab", "open");
+  let tab = store.get("tab2", "all");
   let state = store.get("state", {});          // id -> {s:'fav'|'applied'|'hidden', t:'YYYY-MM-DD'}
   let seen = new Set(store.get("seen", []));
   // alte Merkliste uebernehmen
@@ -339,7 +338,7 @@ footer ul{padding-left:18px;margin:6px 0}
   const lastVisit = store.get("lastVisit", null);
   let DATA = null, PLZ = null, HOME = null, renderLimit = 40;
 
-  const save = () => { store.set("filters3", F); store.set("tab", tab); };
+  const save = () => { store.set("filters3", F); store.set("tab2", tab); };
   const saveState = () => { store.set("state", state); store.set("seen", [...seen]); store.set("favs", []); };
   const toggleIn = (arr, v) => { const i = arr.indexOf(v); i >= 0 ? arr.splice(i, 1) : arr.push(v); };
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -357,10 +356,15 @@ footer ul{padding-left:18px;margin:6px 0}
   /* ---------- Filter ---------- */
   function inTab(j, t = tab) {
     const s = st(j);
-    return t === "open" ? !s : s === t;
+    if (!isView(t)) return s === t;
+    if (s === "hidden" || s === "applied") return false;   // erledigte Stellen nur in ihren eigenen Reitern
+    if (t === "all") return true;
+    if (t === "new") return isNewForHer(j);
+    if (t === "exact") return j.fit === "passt";
+    if (t === "mixed") return j.fit === "teilweise";
+    return false;
   }
   function passesFilters(j, skip) {
-    if (!(j.fit === "passt" || (!F.strict && j.fit === "teilweise") || (F.unknown && j.fit === "offen"))) return false;
     if (skip !== "subjects" && F.subjects.length) {
       const s = eff(j);
       if (!F.subjects.some((x) => (x === "SHP" ? j.isShp : s.includes(x)))) return false;
@@ -382,7 +386,7 @@ footer ul{padding-left:18px;margin:6px 0}
     return true;
   }
   // In den Reitern Gemerkt/Beworben/Ausgeblendet gelten die Filter nicht - dort soll alles sichtbar sein
-  const visible = (j, skip) => inTab(j) && (tab !== "open" || passesFilters(j, skip));
+  const visible = (j, skip, t = tab) => inTab(j, t) && (!isView(t) || passesFilters(j, skip));
 
   function sorted(list) {
     const by = {
@@ -392,7 +396,7 @@ footer ul{padding-left:18px;margin:6px 0}
       pensum: (a, b) => (b.pmax ?? -1) - (a.pmax ?? -1),
     }[F.sort] || (() => 0);
     const rank = { passt: 0, teilweise: 1, offen: 2 };
-    if (tab !== "open") return list.slice().sort((a, b) => (state[b.id]?.t || "").localeCompare(state[a.id]?.t || "") || by(a, b));
+    if (!isView(tab)) return list.slice().sort((a, b) => (state[b.id]?.t || "").localeCompare(state[a.id]?.t || "") || by(a, b));
     return list.slice().sort((a, b) => (rank[a.fit] - rank[b.fit]) || (isNewForHer(b) - isNewForHer(a)) || by(a, b));
   }
   const startKey = (j) => (!j.start ? "9999" : j.start === "sofort" ? "0000" : j.start);
@@ -400,27 +404,28 @@ footer ul{padding-left:18px;margin:6px 0}
   /* ---------- Render: Leiste ---------- */
   function renderBar() {
     $("#tabs").innerHTML = TABS.map((t) => {
-      const n = DATA.jobs.filter((j) => inTab(j, t.id) && (t.id !== "open" || passesFilters(j))).length;
-      const dot = t.id === "open" && DATA.jobs.some((j) => inTab(j, "open") && passesFilters(j) && isNewForHer(j));
+      if (t.sep) return `<span class="tabsep" aria-hidden="true"></span>`;
+      const n = DATA.jobs.filter((j) => visible(j, null, t.id)).length;
+      const dot = t.id === "new" && n > 0;
       return `<button class="tab" role="tab" data-tab="${t.id}" aria-selected="${tab === t.id}">${t.label}<span class="n">${n}</span>${dot ? '<span class="dot" title="Neue Stellen"></span>' : ""}</button>`;
     }).join("");
+    $(`.tab[aria-selected="true"]`)?.scrollIntoView({ block: "nearest", inline: "nearest" });
 
-    const base = DATA.jobs.filter((j) => inTab(j, "open") && passesFilters(j, "subjects"));
+    const viewTab = isView(tab) ? tab : "all";
+    const base = DATA.jobs.filter((j) => inTab(j, viewTab) && passesFilters(j, "subjects"));
     $("#subjects").innerHTML = SUBJ.map((c) => {
       const n = base.filter((j) => (c.id === "SHP" ? j.isShp : eff(j).includes(c.id))).length;
       return `<button class="chip" data-subj="${esc(c.id)}" aria-pressed="${F.subjects.includes(c.id)}">${esc(c.label)}<small>${n}</small></button>`;
     }).join("");
-    $("#subjects").style.opacity = tab === "open" ? "" : ".45";
+    $("#subjects").style.opacity = isView(tab) ? "" : ".45";
 
     const pills = [];
-    if (!F.strict) pills.push(["strict", "auch mit anderen Fächern"]);
-    if (F.unknown) pills.push(["unknown", "auch ohne Fachangabe"]);
     F.pensum.forEach((p) => pills.push(["pensum:" + p, "Pensum " + PENSUM.find((x) => x.id === p).label]));
     F.kinds.forEach((k) => pills.push(["kinds:" + k, KINDS.find((x) => x.id === k).label]));
     F.cantons.forEach((c) => pills.push(["cantons:" + c, "Kt. " + c]));
     if (F.radius) pills.push(["radius", `max. ${F.radius} km ab ${F.home}`]);
     if (F.q) pills.push(["q", `„${F.q}“`]);
-    $("#pills").hidden = !pills.length || tab !== "open";
+    $("#pills").hidden = !pills.length || !isView(tab);
     $("#pills").innerHTML = pills.map(([k, l]) => `<button class="pill" data-pill="${esc(k)}">${esc(l)}</button>`).join("") +
       (pills.length > 1 ? `<button class="pill clear" data-pill="all">alle entfernen</button>` : "");
     $("#fcount").hidden = !pills.length; $("#fcount").textContent = pills.length;
@@ -476,23 +481,27 @@ footer ul{padding-left:18px;margin:6px 0}
   function renderList() {
     const res = sorted(DATA.jobs.filter((j) => visible(j)));
     const unseenN = res.filter(isNewForHer).length;
-    $("#rescount").textContent = `${res.length} ${res.length === 1 ? "Stelle" : "Stellen"}` + (tab === "open" && unseenN ? ` · ${unseenN} neu` : "");
-    $("#markAll").hidden = !(tab === "open" && unseenN);
+    $("#rescount").textContent = `${res.length} ${res.length === 1 ? "Stelle" : "Stellen"}` + (isView(tab) && tab !== "new" && unseenN ? ` · ${unseenN} neu` : "");
+    $("#markAll").hidden = !(isView(tab) && unseenN);
     if (!res.length) {
+      const filtered = F.subjects.length || F.pensum.length || F.kinds.length || F.cantons.length || F.radius || F.q;
+      const reset = filtered ? `<br><button class="btn" id="tryReset">Filter zurücksetzen</button>` : "";
       const msg = {
-        open: F.strict ? `Gerade keine Stelle, die genau passt.<br>Die Liste aktualisiert sich zweimal täglich.<br><button class="btn" id="tryLoose">Auch Stellen mit anderen Fächern zeigen</button>`
-                       : `Keine Stellen mit diesen Filtern.<br><button class="btn" id="tryReset">Filter zurücksetzen</button>`,
+        all: `Keine Stellen mit diesen Filtern.${reset}`,
+        new: `Nichts Neues – du hast alles gesehen ✓<br>Die Liste aktualisiert sich zweimal täglich.${reset}`,
+        exact: `Gerade keine Stelle, die genau passt.${reset}`,
+        mixed: `Keine Stellen mit weiteren Fächern.${reset}`,
         fav: "Noch nichts gemerkt.<br>Tippe bei einer Stelle auf <b>☆ Merken</b>.",
         applied: "Noch keine Bewerbung markiert.<br>Tippe bei einer Stelle auf <b>✓ Beworben</b>, dann behältst du den Überblick.",
         hidden: "Keine ausgeblendeten Stellen.",
       }[tab];
-      $("#list").innerHTML = `<div class="empty"><span class="big">${{ open: "🔍", fav: "☆", applied: "📨", hidden: "🙈" }[tab]}</span>${msg}</div>`;
+      $("#list").innerHTML = `<div class="empty"><span class="big">${{ all: "🔍", new: "✨", exact: "🔍", mixed: "🔍", fav: "☆", applied: "📨", hidden: "🙈" }[tab]}</span>${msg}</div>`;
       return;
     }
     let html = "", last = null;
     res.slice(0, renderLimit).forEach((j) => {
-      if (tab === "open" && (!F.strict || F.unknown) && j.fit !== last) {
-        html += `<div class="section">${{ passt: "Passt genau", teilweise: "Mit anderen Fächern", offen: "Ohne Fachangabe" }[j.fit]}</div>`;
+      if ((tab === "all" || tab === "new") && j.fit !== last) {
+        html += `<div class="section">${{ passt: "Passt genau", teilweise: "Mit weiteren Fächern", offen: "Ohne Fachangabe im Inserat" }[j.fit]}</div>`;
         last = j.fit;
       }
       html += card(j);
@@ -504,11 +513,10 @@ footer ul{padding-left:18px;margin:6px 0}
 
   /* ---------- Filter-Blatt ---------- */
   function renderSheet() {
-    document.querySelectorAll("#segStrict button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.strict === "0") === F.strict)));
-    $("#f-unknown").checked = F.unknown;
+    const vt = isView(tab) ? tab : "all";
     const cnt = (key, vals, get) => {
       const c = Object.fromEntries(vals.map((v) => [v, 0]));
-      DATA.jobs.filter((j) => inTab(j, "open") && passesFilters(j, key)).forEach((j) => get(j).forEach((v) => { if (v in c) c[v]++; }));
+      DATA.jobs.filter((j) => inTab(j, vt) && passesFilters(j, key)).forEach((j) => get(j).forEach((v) => { if (v in c) c[v]++; }));
       return c;
     };
     const chip = (g, v, l, n, on) => `<button class="chip" data-g="${g}" data-v="${esc(v)}" aria-pressed="${on}">${esc(l)}<small>${n}</small></button>`;
@@ -521,7 +529,7 @@ footer ul{padding-left:18px;margin:6px 0}
     $("#f-canton").innerHTML = cantons.filter((c) => cc[c] || F.cantons.includes(c)).map((c) => chip("cantons", c, "Kanton " + c, cc[c], F.cantons.includes(c))).join("");
     $("#f-home").value = F.home; $("#f-radius").value = String(F.radius);
     $("#f-q").value = F.q; $("#f-sort").value = F.sort;
-    const n = DATA.jobs.filter((j) => inTab(j, "open") && passesFilters(j)).length;
+    const n = DATA.jobs.filter((j) => inTab(j, vt) && passesFilters(j)).length;
     $("#applyBtn").textContent = `${n} ${n === 1 ? "Stelle" : "Stellen"} anzeigen`;
   }
   let lastFocus = null;
@@ -544,7 +552,11 @@ footer ul{padding-left:18px;margin:6px 0}
   }
   function setState(id, s) {
     const prev = state[id] ? { ...state[id] } : null;
-    if (s) state[id] = { s, t: today }; else delete state[id];
+    if (s) {
+      state[id] = { s, t: today };
+      const j = DATA.jobs.find((x) => x.id === id);
+      if (s === "applied" && j) state[id].j = { title: j.title, employer: j.employer, place: j.place, canton: j.canton, url: j.url, pmin: j.pmin, pmax: j.pmax };
+    } else delete state[id];
     seen.add(id); saveState(); render();
     return () => { if (prev) state[id] = prev; else delete state[id]; saveState(); render(); };
   }
@@ -557,7 +569,7 @@ footer ul{padding-left:18px;margin:6px 0}
   document.addEventListener("click", (e) => {
     const t = e.target;
     const tb = t.closest("[data-tab]"); if (tb) { tab = tb.dataset.tab; renderLimit = 40; render(); window.scrollTo({ top: $(".hero").offsetHeight, behavior: "smooth" }); return; }
-    const sj = t.closest("[data-subj]"); if (sj) { if (tab !== "open") tab = "open"; toggleIn(F.subjects, sj.dataset.subj); renderLimit = 40; render(); return; }
+    const sj = t.closest("[data-subj]"); if (sj) { if (!isView(tab)) tab = "all"; toggleIn(F.subjects, sj.dataset.subj); renderLimit = 40; render(); return; }
     const op = t.closest("[data-open]"); if (op) { markSeen(op.dataset.open); return; }
     const ac = t.closest("[data-act]");
     if (ac) {
@@ -586,12 +598,12 @@ footer ul{padding-left:18px;margin:6px 0}
     if (t.id === "tryReset") { const keep = { home: F.home, sort: F.sort }; F = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), keep); render(); return; }
   });
   document.addEventListener("toggle", (e) => { const d = e.target.closest?.("[data-det]"); if (d && d.open) markSeen(d.dataset.det); }, true);
-  $("#openFilter").addEventListener("click", () => { if (tab !== "open") { tab = "open"; render(); } openSheet(true); });
+  $("#openFilter").addEventListener("click", () => { if (!isView(tab)) { tab = "all"; render(); } openSheet(true); });
+  $("#greet").addEventListener("click", () => { tab = "new"; renderLimit = 40; render(); $("#bar").scrollIntoView({ behavior: "smooth" }); });
   $("#applyBtn").addEventListener("click", () => { openSheet(false); renderLimit = 40; render(); });
   $("#sheetBg").addEventListener("click", () => { openSheet(false); render(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sheet").hidden) { openSheet(false); render(); } });
   $("#resetBtn").addEventListener("click", async () => { const keep = { home: "5432", sort: F.sort, subjects: F.subjects }; F = Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), keep); await setHome(); sheetChanged(); });
-  $("#f-unknown").addEventListener("change", (e) => { F.unknown = e.target.checked; sheetChanged(); });
   $("#f-radius").addEventListener("change", (e) => { F.radius = +e.target.value; sheetChanged(); });
   $("#f-home").addEventListener("change", async (e) => { F.home = e.target.value.trim(); await setHome(); sheetChanged(); });
   $("#f-sort").addEventListener("change", (e) => { F.sort = e.target.value; sheetChanged(); });
@@ -625,16 +637,23 @@ footer ul{padding-left:18px;margin:6px 0}
     seen = new Set([...seen].filter((id) => ids.has(id)));
     Object.keys(state).forEach((id) => { if (!ids.has(id) && state[id].s !== "applied") delete state[id]; });
     saveState();
+    // beworbene Stellen, deren Inserat nicht mehr online ist, trotzdem im Reiter "Beworben" zeigen
+    Object.entries(state).forEach(([id, v]) => {
+      if (ids.has(id) || v.s !== "applied" || !v.j) return;
+      DATA.jobs.push(Object.assign({ id, subjects: [], subjects_text: [], levels: [], text: "", isShp: false, fit: "passt",
+        source: "nicht mehr online", first_seen: v.t, published: null, gone: true }, v.j));
+    });
 
     const up = new Date(DATA.updated);
     $("#updated").textContent = `Aktualisiert ${up.toLocaleDateString("de-CH", { weekday: "long", day: "numeric", month: "long" })}, ${up.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })} Uhr`;
 
-    const fresh = DATA.jobs.filter((j) => j.fit === "passt" && isNewForHer(j)).length;
-    const exact = DATA.jobs.filter((j) => j.fit === "passt" && !st(j)).length;
-    const g = $("#greet"); g.hidden = false;
+    const freshAll = DATA.jobs.filter((j) => inTab(j, "new"));
+    const fresh = freshAll.length, freshExact = freshAll.filter((j) => j.fit === "passt").length;
+    const total = DATA.jobs.filter((j) => inTab(j, "all")).length;
+    const g = $("#greet"); g.hidden = false; g.style.cursor = fresh ? "pointer" : "";
     g.innerHTML = fresh
-      ? `<b>${fresh}</b><div class="txt">${fresh === 1 ? "neue passende Stelle" : "neue passende Stellen"}<small>${lastVisit ? "seit deinem letzten Besuch" : `insgesamt ${exact} passende Stellen offen`}</small></div>`
-      : `<b>✓</b><div class="txt">Nichts Neues – du bist auf dem neuesten Stand<small>${exact} passende Stellen offen</small></div>`;
+      ? `<b>${fresh}</b><div class="txt">${fresh === 1 ? "neue Stelle" : "neue Stellen"}${lastVisit ? " seit deinem letzten Besuch" : ""} →<small>${freshExact} davon passen genau · insgesamt ${total} offen</small></div>`
+      : `<b>✓</b><div class="txt">Nichts Neues – du bist auf dem neuesten Stand<small>insgesamt ${total} Stellen offen</small></div>`;
 
     const failed = DATA.sources.filter((s) => !s.ok);
     if (failed.length) g.insertAdjacentHTML("afterend", `<div class="notice">Hinweis: ${failed.map((s) => esc(s.name)).join(", ")} konnte beim letzten Update nicht geladen werden. Es werden die zuletzt bekannten Stellen angezeigt.</div>`);
