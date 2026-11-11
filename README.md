@@ -16,6 +16,7 @@ mit Filtern für Fach, Schulstufe, Pensum, Stellvertretungen und Umkreis.
 | stellenboersevsa.ch | Volksschule Kanton Zürich (Dauerstellen + Stellvertretungen) |
 | sonderpaedagogisches.stellenboersevsa.ch | Sonderschulen Kanton Zürich (Unterricht) |
 | job-room.ch | Stellenbörse des Bundes (AG, ZH, LU, ZG, SO, BL, BS, SZ) |
+| jobs.ch | Öffentliche Such-API, Regionen Zürich und Aargau |
 
 ## Lokal testen
 

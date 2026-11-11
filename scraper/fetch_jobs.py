@@ -7,6 +7,7 @@ Quellen:
   2. Stellenmarkt Kanton Aargau (Kantonsschulen, Berufsfachschulen)
   3. VSA-Stellenboerse Kanton Zuerich (Volksschule, Dauerstellen + Stellvertretungen)
   4. job-room.ch (Stellenboerse des Bundes, viele Kantone, Privatschulen usw.)
+  5. jobs.ch (oeffentliche Such-API, Regionen Zuerich und Aargau)
 
 Nur Python-Standardbibliothek, damit es ohne Installation auf GitHub Actions laeuft.
 Aufruf:  python scraper/fetch_jobs.py
@@ -730,6 +731,92 @@ def source_jobroom(cache: dict, geo: Geo) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
+# Quelle 5: jobs.ch (oeffentliche Such-API)
+# --------------------------------------------------------------------------- #
+
+JOBSCH = "https://www.jobs.ch/api/v1/public/search"
+JOBSCH_REGIONS = [7, 12]          # 7 = Region Zuerich, 12 = Region Aargau/Solothurn
+# Orte, bei denen der erste PLZ-Treffer daneben liegt (z.B. Zuerich -> Flughafen)
+PLACE_PLZ = {
+    "zürich": "8001", "zurich": "8001", "baden": "5400", "aarau": "5000", "brugg": "5200",
+    "winterthur": "8400", "olten": "4600", "luzern": "6003", "zug": "6300", "basel": "4051",
+    "bern": "3011", "schaffhausen": "8200", "wettingen": "5430", "dietikon": "8953",
+}
+
+
+def jobsch_search(keyword: str) -> list[dict]:
+    out = []
+    regions = "&".join(f"region-ids%5B%5D={r}" for r in JOBSCH_REGIONS)
+    for page in range(1, 11):
+        url = f"{JOBSCH}?query={urllib.parse.quote(keyword)}&rows=20&page={page}&{regions}"
+        d = get_json(url)
+        docs = d.get("documents") or []
+        out.extend(docs)
+        if not docs or page >= int(d.get("num_pages") or 1):
+            break
+        time.sleep(0.3)
+    return out
+
+
+def jobsch_detail(job_id: str) -> dict:
+    d = get_json(f"{JOBSCH}/job/{job_id}")
+    return {
+        "text": strip_tags(d.get("template_text") or "")[:5000],
+        "zip": d.get("zipcode") or "",
+        "apply": d.get("application_url") or d.get("external_url") or None,
+    }
+
+
+def source_jobsch(cache: dict, geo: Geo) -> list[dict]:
+    seen: dict[str, dict] = {}
+    for kw in JOBROOM_KEYWORDS:
+        for x in jobsch_search(kw):
+            seen.setdefault(x["job_id"], x)
+        time.sleep(0.3)
+    picked = []
+    for x in seen.values():
+        title = clean(x.get("title"))
+        role = role_of(title)
+        if role == "Lehrperson" or (role == "Schulleitung" and re.search(r"schul", f"{title} {x.get('company_name','')}", re.I)):
+            picked.append(x)
+    todo = [x for x in picked if f"jc-{x['job_id']}" not in cache]
+    with ThreadPoolExecutor(4) as ex:
+        for x, det in zip(todo, ex.map(lambda j: safe(jobsch_detail, j["job_id"]), todo)):
+            if det:
+                cache[f"jc-{x['job_id']}"] = det
+    jobs = []
+    for x in picked:
+        jid = x["job_id"]
+        d = cache.get(f"jc-{jid}", {})
+        title = clean(x.get("title"))
+        employer = clean(x.get("company_name"))
+        text = d.get("text") or x.get("preview") or ""
+        grades = [g for g in (x.get("employment_grades") or []) if isinstance(g, int) and g > 0]
+        pmin, pmax = (min(grades), max(grades)) if grades else (None, None)
+        tmin, tmax = parse_pensum(title)
+        if tmax and (not pmax or (pmin == pmax == 100 and tmax != 100)):
+            pmin, pmax = tmin, tmax
+        place = clean(x.get("place"))
+        first = re.split(r",|/| oder | und ", place)[0].strip()
+        plz = d.get("zip") or PLACE_PLZ.get(first.lower())
+        g = geo.lookup(plz, first)
+        url = ((x.get("_links") or {}).get("detail_de") or {}).get("href") or f"https://www.jobs.ch/de/stellenangebote/detail/{jid}/"
+        primary = f"{title} {employer}"
+        jobs.append(make_job(
+            id=f"jc-{jid}", source="jobs.ch", url=url, title=title, employer=employer,
+            place=first, plz=d.get("zip") or None, canton="", geo=g,
+            pmin=pmin, pmax=pmax, wl=parse_lektionen(title),
+            start=None, end=None,
+            temporary=True if re.search(r"befristet|stellvertret|vikariat", title, re.I) else None,
+            substitute=bool(SUBST_RE.search(title)),
+            levels=classify(LEVELS, primary, text), subjects=classify(SUBJECTS, title),
+            role=role_of(title), published=(x.get("initial_publication_date") or x.get("publication_date") or "")[:10] or None,
+            text=text, apply=d.get("apply"),
+        ))
+    return jobs
+
+
+# --------------------------------------------------------------------------- #
 # Zusammenfuehren
 # --------------------------------------------------------------------------- #
 
@@ -794,6 +881,7 @@ def main() -> int:
         ("Volksschule Zürich (VSA)", "vsa", source_vsa, "https://www.stellenboersevsa.ch/public_index.php"),
         ("Sonderschulen Zürich (VSA)", "vsasp", source_vsa_sonder, "https://sonderpaedagogisches.stellenboersevsa.ch/public_index.php"),
         ("job-room.ch", "jr", source_jobroom, "https://www.job-room.ch"),
+        ("jobs.ch", "jc", source_jobsch, "https://www.jobs.ch"),
     ]
     all_jobs: list[dict] = []
     meta = []
