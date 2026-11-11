@@ -8,6 +8,9 @@ Quellen:
   3. VSA-Stellenboerse Kanton Zuerich (Volksschule, Dauerstellen + Stellvertretungen)
   4. job-room.ch (Stellenboerse des Bundes, viele Kantone, Privatschulen usw.)
   5. jobs.ch (oeffentliche Such-API, Regionen Zuerich und Aargau)
+  6. jobup.ch (gleiche Plattform, schweizweit, gefiltert auf die Region)
+  7. sozjobs.ch (Sozial- und Bildungsbereich)
+  8. publicjobs.ch (Gemeinden, Staedte, Kantone)
 
 Nur Python-Standardbibliothek, damit es ohne Installation auf GitHub Actions laeuft.
 Aufruf:  python scraper/fetch_jobs.py
@@ -744,11 +747,17 @@ PLACE_PLZ = {
 }
 
 
-def jobsch_search(keyword: str) -> list[dict]:
+def canton_hint(place: str) -> str | None:
+    """'Lengnau BE' -> 'BE'"""
+    m = re.search(r"\b(AG|ZH|LU|ZG|SO|BL|BS|SZ|BE|SG|TG|SH|FR|VD|GE|NE|JU|VS|TI|GR|UR|OW|NW|GL|AR|AI)$", place or "")
+    return m.group(1) if m else None
+
+
+def jobsch_search(keyword: str, base: str = JOBSCH, regions: list[int] | None = JOBSCH_REGIONS) -> list[dict]:
     out = []
-    regions = "&".join(f"region-ids%5B%5D={r}" for r in JOBSCH_REGIONS)
+    reg = "".join(f"&region-ids%5B%5D={r}" for r in (regions or []))
     for page in range(1, 11):
-        url = f"{JOBSCH}?query={urllib.parse.quote(keyword)}&rows=20&page={page}&{regions}"
+        url = f"{base}?query={urllib.parse.quote(keyword)}&rows=20&page={page}{reg}"
         d = get_json(url)
         docs = d.get("documents") or []
         out.extend(docs)
@@ -758,8 +767,8 @@ def jobsch_search(keyword: str) -> list[dict]:
     return out
 
 
-def jobsch_detail(job_id: str) -> dict:
-    d = get_json(f"{JOBSCH}/job/{job_id}")
+def jobsch_detail(job_id: str, base: str = JOBSCH) -> dict:
+    d = get_json(f"{base}/job/{job_id}")
     return {
         "text": strip_tags(d.get("template_text") or "")[:5000],
         "zip": d.get("zipcode") or "",
@@ -767,10 +776,11 @@ def jobsch_detail(job_id: str) -> dict:
     }
 
 
-def source_jobsch(cache: dict, geo: Geo) -> list[dict]:
+def source_jobsch(cache: dict, geo: Geo, base: str = JOBSCH, regions: list[int] | None = JOBSCH_REGIONS,
+                  prefix: str = "jc", name: str = "jobs.ch", cantons: list[str] | None = None) -> list[dict]:
     seen: dict[str, dict] = {}
     for kw in JOBROOM_KEYWORDS:
-        for x in jobsch_search(kw):
+        for x in jobsch_search(kw, base, regions):
             seen.setdefault(x["job_id"], x)
         time.sleep(0.3)
     picked = []
@@ -779,15 +789,25 @@ def source_jobsch(cache: dict, geo: Geo) -> list[dict]:
         role = role_of(title)
         if role == "Lehrperson" or (role == "Schulleitung" and re.search(r"schul", f"{title} {x.get('company_name','')}", re.I)):
             picked.append(x)
-    todo = [x for x in picked if f"jc-{x['job_id']}" not in cache]
+    if cantons:
+        # nur Inserate aus der Region (jobup sucht schweizweit) - Ort vor dem Detail-Abruf pruefen
+        def near(x):
+            first = re.split(r",|/| oder | und ", clean(x.get("place")))[0].strip()
+            hint = canton_hint(first)
+            if hint:
+                return hint in cantons
+            g = geo.lookup(PLACE_PLZ.get(first.lower()), first)
+            return bool(g and g[2] in cantons)
+        picked = [x for x in picked if near(x)]
+    todo = [x for x in picked if f"{prefix}-{x['job_id']}" not in cache]
     with ThreadPoolExecutor(4) as ex:
-        for x, det in zip(todo, ex.map(lambda j: safe(jobsch_detail, j["job_id"]), todo)):
+        for x, det in zip(todo, ex.map(lambda j: safe(jobsch_detail, j["job_id"], base), todo)):
             if det:
-                cache[f"jc-{x['job_id']}"] = det
+                cache[f"{prefix}-{x['job_id']}"] = det
     jobs = []
     for x in picked:
         jid = x["job_id"]
-        d = cache.get(f"jc-{jid}", {})
+        d = cache.get(f"{prefix}-{jid}", {})
         title = clean(x.get("title"))
         employer = clean(x.get("company_name"))
         text = d.get("text") or x.get("preview") or ""
@@ -799,11 +819,13 @@ def source_jobsch(cache: dict, geo: Geo) -> list[dict]:
         place = clean(x.get("place"))
         first = re.split(r",|/| oder | und ", place)[0].strip()
         plz = d.get("zip") or PLACE_PLZ.get(first.lower())
-        g = geo.lookup(plz, first)
-        url = ((x.get("_links") or {}).get("detail_de") or {}).get("href") or f"https://www.jobs.ch/de/stellenangebote/detail/{jid}/"
+        g = geo.lookup(plz, first, canton_hint(first))
+        links = x.get("_links") or {}
+        url = ((links.get("detail_de") or links.get("detail_fr") or {}).get("href")
+               or f"https://www.jobs.ch/de/stellenangebote/detail/{jid}/")
         primary = f"{title} {employer}"
         jobs.append(make_job(
-            id=f"jc-{jid}", source="jobs.ch", url=url, title=title, employer=employer,
+            id=f"{prefix}-{jid}", source=name, url=url, title=title, employer=employer,
             place=first, plz=d.get("zip") or None, canton="", geo=g,
             pmin=pmin, pmax=pmax, wl=parse_lektionen(title),
             start=None, end=None,
@@ -814,6 +836,179 @@ def source_jobsch(cache: dict, geo: Geo) -> list[dict]:
             text=text, apply=d.get("apply"),
         ))
     return jobs
+
+
+# --------------------------------------------------------------------------- #
+# Quelle 6: jobup.ch (gleiche Plattform wie jobs.ch, v.a. Westschweiz)
+# --------------------------------------------------------------------------- #
+
+JOBUP = "https://www.jobup.ch/api/v1/public/search"
+
+
+def source_jobup(cache: dict, geo: Geo) -> list[dict]:
+    # jobup kennt die Regions-IDs von jobs.ch nicht -> schweizweit suchen, dann nach Kanton filtern
+    return source_jobsch(cache, geo, base=JOBUP, regions=None, prefix="ju", name="jobup.ch",
+                         cantons=JOBROOM_CANTONS)
+
+
+# --------------------------------------------------------------------------- #
+# Gemeinsam fuer sozjobs.ch und publicjobs.ch
+# --------------------------------------------------------------------------- #
+
+PORTAL_KEYWORDS = [
+    "Lehrperson", "Lehrer", "Lehrkraft", "Sekundar", "Oberstufe", "Bezirksschule", "Realschule",
+    "Heilpädagog", "Sonderschule", "Bildnerisches Gestalten", "Englisch", "Deutsch", "Stellvertretung",
+]
+CANTON_SLUG = {
+    "aargau": "AG", "zuerich": "ZH", "zurich": "ZH", "luzern": "LU", "zug": "ZG", "solothurn": "SO",
+    "basel-landschaft": "BL", "basel-stadt": "BS", "schwyz": "SZ",
+}
+
+
+def detail_text(url: str, start_marker: str = "") -> dict:
+    s = get_text(url)
+    s = re.sub(r"(?is)<(header|nav|footer|aside)\b.*?</\1>", " ", s)
+    text = strip_tags(s)
+    i = text.find(start_marker) if start_marker else -1
+    return {"text": (text[i:] if i >= 0 else text)[:5000]}
+
+
+def teacher_job(*, id, source, url, title, employer, place, canton, published, pens, geo, cache_key, cache) -> dict:
+    d = cache.get(cache_key, {})
+    text = d.get("text", "")
+    pmin, pmax = parse_pensum(pens or title)
+    g = geo.lookup(PLACE_PLZ.get((place or "").lower()), place, canton)
+    primary = f"{title} {employer}"
+    return make_job(
+        id=id, source=source, url=url, title=title, employer=employer, place=place, plz=None,
+        canton=canton, geo=g, pmin=pmin, pmax=pmax, wl=parse_lektionen(f"{title} {pens or ''}"),
+        start=None, end=None,
+        temporary=True if re.search(r"befristet|stellvertret|vikariat", title, re.I) else None,
+        substitute=bool(SUBST_RE.search(title)),
+        levels=classify(LEVELS, primary, text), subjects=classify(SUBJECTS, title),
+        role=role_of(title), published=published, text=text,
+    )
+
+
+def wanted(title: str, employer: str) -> bool:
+    role = role_of(title)
+    return role == "Lehrperson" or (role == "Schulleitung" and bool(re.search(r"schul", f"{title} {employer}", re.I)))
+
+
+# --------------------------------------------------------------------------- #
+# Quelle 7: sozjobs.ch
+# --------------------------------------------------------------------------- #
+
+SOZ = "https://www.sozjobs.ch"
+
+
+def soz_parse(htm: str) -> list[dict]:
+    out = []
+    for a in re.findall(r'<article class="jobs-job".*?</article>', htm, re.S):
+        jid = re.search(r'data-identitynumber="(J\d+)"', a)
+        link = re.search(r'<a class="js-joboffer-detail" href="([^"]+)"[^>]*>(.*?)</a>', a, re.S)
+        if not jid or not link:
+            continue
+        add = clean(strip_tags((re.search(r'<p class="addition">(.*?)</p>', a, re.S) or [None, ""])[1]))
+        parts = [x.strip() for x in add.split("·")]
+        date = re.search(r'<time datetime="([\d-]+)"', a)
+        work = re.search(r'<span class="workload">(.*?)</span>', a, re.S)
+        out.append({
+            "id": jid.group(1), "url": link.group(1), "title": clean(strip_tags(link.group(2))),
+            "canton": parts[0] if parts and re.fullmatch(r"[A-Z]{2}", parts[0]) else "",
+            "place": parts[1] if len(parts) > 2 else "", "employer": parts[-1] if len(parts) > 1 else "",
+            "published": date.group(1) if date else None, "pens": clean(work.group(1)) if work else "",
+        })
+    return out
+
+
+def soz_search(keyword: str) -> list[dict]:
+    s = get_text(f"{SOZ}/suche?searchterm={urllib.parse.quote(keyword)}")
+    items = soz_parse(s)
+    h = re.search(r'data-searchhash="([^"]+)"', s)
+    nxt = re.search(r'data-nextpage="(\d+)"', s)
+    page = int(nxt.group(1)) if nxt else None
+    while h and page and page <= 15:
+        time.sleep(0.4)
+        d = get_json(f"{SOZ}/scroll/searchhash/{h.group(1)}/page/{page}")
+        items += soz_parse(d.get("html", ""))
+        page = int(d["nextpage"]) if d.get("nextpage") else None
+    return items
+
+
+def source_sozjobs(cache: dict, geo: Geo) -> list[dict]:
+    seen: dict[str, dict] = {}
+    for kw in PORTAL_KEYWORDS:
+        for x in soz_search(kw):
+            seen.setdefault(x["id"], x)
+        time.sleep(0.4)
+    picked = [x for x in seen.values() if x["canton"] in JOBROOM_CANTONS and wanted(x["title"], x["employer"])]
+    todo = [x for x in picked if f"soz-{x['id']}" not in cache]
+    with ThreadPoolExecutor(3) as ex:
+        for x, det in zip(todo, ex.map(lambda j: safe(detail_text, j["url"], j["title"]), todo)):
+            if det:
+                cache[f"soz-{x['id']}"] = det
+    return [teacher_job(id=f"soz-{x['id']}", source="sozjobs.ch", url=x["url"], title=x["title"],
+                        employer=x["employer"], place=x["place"], canton=x["canton"], published=x["published"],
+                        pens=x["pens"], geo=geo, cache_key=f"soz-{x['id']}", cache=cache) for x in picked]
+
+
+# --------------------------------------------------------------------------- #
+# Quelle 8: publicjobs.ch
+# --------------------------------------------------------------------------- #
+
+PJ = "https://www.publicjobs.ch"
+
+
+def pj_search(keyword: str) -> list[dict]:
+    out, start = [], None
+    for _ in range(15):
+        fields = {"searchquery-jobTitle": keyword}
+        if start is not None:
+            fields["from"] = str(start)
+        body = urllib.parse.urlencode(fields).encode()
+        raw, _h = http(f"{PJ}/jobsearch", data=body, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        s = raw.decode("utf-8", errors="replace")
+        for m in re.finditer(r'<li class="list-group-item"[^>]*data-job="(\d+)">(.*?)</li>', s, re.S):
+            jid, li = m.groups()
+            href = re.search(r'href="([^"]+)"', li)
+            title = re.search(r"<strong>(.*?)</strong>", li, re.S)
+            emp = re.search(r"</strong><br>(.*?)</div>", li, re.S)
+            date = re.search(r"(\d{1,2}\.\d{1,2}\.\d{4})", li)
+            place = re.search(r'<div class="hidden-xs">(.*?)</div>', li, re.S)
+            if not href or not title:
+                continue
+            slug = re.search(r"/jobs/([^/]+)/", href.group(1))
+            out.append({
+                "id": jid, "url": href.group(1), "title": clean(strip_tags(title.group(1))),
+                "employer": clean(strip_tags(emp.group(1))) if emp else "",
+                "place": clean(strip_tags(place.group(1))) if place else "",
+                "canton": CANTON_SLUG.get(slug.group(1), "") if slug else "",
+                "published": parse_date_ch(date.group(1)) if date else None,
+            })
+        nxt = re.search(r'class="[^"]*jobs_next_btn[^"]*"[^>]*data-next="(\d+)"|data-next="(\d+)"[^>]*class="[^"]*jobs_next_btn', s)
+        if not nxt:
+            break
+        start = int(nxt.group(1) or nxt.group(2))
+        time.sleep(0.4)
+    return out
+
+
+def source_publicjobs(cache: dict, geo: Geo) -> list[dict]:
+    seen: dict[str, dict] = {}
+    for kw in PORTAL_KEYWORDS:
+        for x in pj_search(kw):
+            seen.setdefault(x["id"], x)
+        time.sleep(0.4)
+    picked = [x for x in seen.values() if x["canton"] in JOBROOM_CANTONS and wanted(x["title"], x["employer"])]
+    todo = [x for x in picked if f"pj-{x['id']}" not in cache]
+    with ThreadPoolExecutor(3) as ex:
+        for x, det in zip(todo, ex.map(lambda j: safe(detail_text, j["url"], j["title"]), todo)):
+            if det:
+                cache[f"pj-{x['id']}"] = det
+    return [teacher_job(id=f"pj-{x['id']}", source="publicjobs.ch", url=x["url"], title=x["title"],
+                        employer=x["employer"], place=x["place"], canton=x["canton"], published=x["published"],
+                        pens=x["title"], geo=geo, cache_key=f"pj-{x['id']}", cache=cache) for x in picked]
 
 
 # --------------------------------------------------------------------------- #
@@ -882,6 +1077,9 @@ def main() -> int:
         ("Sonderschulen Zürich (VSA)", "vsasp", source_vsa_sonder, "https://sonderpaedagogisches.stellenboersevsa.ch/public_index.php"),
         ("job-room.ch", "jr", source_jobroom, "https://www.job-room.ch"),
         ("jobs.ch", "jc", source_jobsch, "https://www.jobs.ch"),
+        ("jobup.ch", "ju", source_jobup, "https://www.jobup.ch"),
+        ("sozjobs.ch", "soz", source_sozjobs, "https://www.sozjobs.ch"),
+        ("publicjobs.ch", "pj", source_publicjobs, "https://www.publicjobs.ch"),
     ]
     all_jobs: list[dict] = []
     meta = []

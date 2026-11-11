@@ -17,6 +17,9 @@ mit Filtern für Fach, Schulstufe, Pensum, Stellvertretungen und Umkreis.
 | sonderpaedagogisches.stellenboersevsa.ch | Sonderschulen Kanton Zürich (Unterricht) |
 | job-room.ch | Stellenbörse des Bundes (AG, ZH, LU, ZG, SO, BL, BS, SZ) |
 | jobs.ch | Öffentliche Such-API, Regionen Zürich und Aargau |
+| jobup.ch | Gleiche Plattform wie jobs.ch, nur Stellen aus AG, ZH, LU, ZG, SO, BL, BS, SZ |
+| sozjobs.ch | Sozial- und Bildungsbereich (gleiche Kantone) |
+| publicjobs.ch | Gemeinden, Städte, Kantone (gleiche Kantone) |
 
 ## Lokal testen
 

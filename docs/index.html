@@ -204,7 +204,6 @@ footer ul{padding-left:18px;margin:6px 0}
       <h1>Offene Lehrerstellen</h1>
       <div class="updated" id="updated">Lade Stellen …</div>
       <div class="greet" id="greet" hidden></div>
-      <a class="toportals" href="#portals">🔎 Auch auf jobup.ch &amp; Co. suchen ↓</a>
     </header>
   </div>
 </div>
@@ -235,13 +234,6 @@ footer ul{padding-left:18px;margin:6px 0}
 
   <div class="listhead"><span id="rescount"></span><button class="link" id="markAll" hidden>Alle als gesehen markieren</button></div>
   <div class="list" id="list"></div>
-
-  <section class="portals" id="portals">
-    <h3>🔎 Auch auf anderen Portalen suchen</h3>
-    <p class="hint">Diese Seiten lassen sich nicht automatisch einlesen. Ein Tipp öffnet dort direkt die Suche nach dem gewählten Beruf. Ort und Umkreis lassen sich dort einstellen.</p>
-    <div class="ptabs" id="ptabs"></div>
-    <div class="plinks" id="plinks"></div>
-  </section>
 
   <footer id="footer"></footer>
 </div>
@@ -632,30 +624,6 @@ footer ul{padding-left:18px;margin:6px 0}
   const bar = $("#bar");
   new IntersectionObserver(([en]) => bar.classList.toggle("stuck", !en.isIntersecting)).observe($("header"));
 
-  /* ---------- Weitere Portale (nur Links) ---------- */
-  const PSEARCH = [
-    { id: "BG", label: "🎨 BG", term: "Bildnerisches Gestalten" },
-    { id: "D", label: "📖 Deutsch", term: "Lehrperson Deutsch Oberstufe" },
-    { id: "E", label: "💬 Englisch", term: "Lehrperson Englisch Oberstufe" },
-    { id: "SHP", label: "🤝 SHP", term: "Schulische Heilpädagogik Oberstufe" },
-    { id: "ALL", label: "Oberstufe allgemein", term: "Lehrperson Oberstufe" },
-  ];
-  const PORTALS = [
-    { name: "jobup.ch", url: (t) => `https://www.jobup.ch/de/stellenangebote/?term=${encodeURIComponent(t)}` },
-    { name: "publicjobs.ch", url: (t) => `https://www.publicjobs.ch/jobs?search=${encodeURIComponent(t)}` },
-    { name: "sozjobs.ch", url: (t) => `https://www.sozjobs.ch/suche?searchterm=${encodeURIComponent(t)}` },
-  ];
-  let pSel = store.get("psel", "BG");
-  function renderPortals() {
-    $("#ptabs").innerHTML = PSEARCH.map((p) => `<button class="chip" data-psel="${p.id}" aria-pressed="${pSel === p.id}">${esc(p.label)}</button>`).join("");
-    const term = (PSEARCH.find((p) => p.id === pSel) || PSEARCH[0]).term;
-    $("#plinks").innerHTML = PORTALS.map((p) => `<a class="plink" href="${esc(p.url(term))}" target="_blank" rel="noopener">${esc(p.name)} <span>↗</span></a>`).join("");
-  }
-  document.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-psel]"); if (!b) return;
-    pSel = b.dataset.psel; store.set("psel", pSel); renderPortals();
-  });
-
   /* ---------- Umkreis ---------- */
   async function setHome() {
     if (!PLZ) { try { PLZ = await (await fetch("plz.json")).json(); } catch { PLZ = {}; } }
@@ -712,7 +680,6 @@ footer ul{padding-left:18px;margin:6px 0}
     store.set("firstVisit", firstVisit);
     store.set("lastVisit", today);
     await setHome();
-    renderPortals();
     render();
   }
   init();
